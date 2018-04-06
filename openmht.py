@@ -1,21 +1,18 @@
-"""
-Input arguments:
-(1) File path of the input CSV with detections.
-(2) Parameters for the Kalman filter.
-"""
-
 import sys
-import kalmanfilter as kf
+# import kalmanfilter as kf
 
 
-def main(argv):
-    filepath = argv[0]
-    print("Detections: {}".format(filepath))
-    print("\nDone.")
+class OpenMHT:
+    """
+    Multiple hypothesis tracking.
+    """
+    def __init__(self, detections):
+        self.detections = detections
+        self.frame_count, _, self.dimensionality = self.detections.shape
+        self.track_trees = []
 
+    def global_hypothesis(self, trees):
+        pass
 
-def global_hypothesis(trees):
-    pass
-
-if __name__ == "__main__":
-    main(sys.argv[1:])
+    def run(self):
+        pass
