@@ -14,7 +14,6 @@ class OpenMHT:
         self.frame_count, _, self.dimensionality = detections.shape
         self.frame_number = 0
         self.track_trees = []  # Track hypotheses for detections in each frame
-        # self.vertex_ids = []  # Assign a vertex ID for each detection (A-Z)
         self.detection_count = 0
 
     def global_hypothesis(self, trees):
@@ -23,21 +22,8 @@ class OpenMHT:
     def get_detections(self):
         return self.detections.pop()
 
-    # def get_vertex_id(self):
-    #     ord_index = ord('a') + len(self.vertex_ids)
-    #     ord_length = ord('z') - ord('a')
-    #     ord_factor = int((ord_index-ord('a')) / float(ord_length))
-    #     ord_index -= (ord_length * ord_factor)
-    #     vertex_id = chr(ord_index) * (ord_factor+1)
-    #
-    #     return vertex_id
-
     def run(self):
         print("Number of frames: {}".format(len(self.detections)))
-        # for i in range(200):
-        #     vid = self.get_vertex_id()
-        #     self.vertex_ids.append(vid)
-        #     print(vid)
 
         while self.detections:
             self.frame_number += 1
