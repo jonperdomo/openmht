@@ -3,6 +3,7 @@ import sys
 import numpy as np
 from copy import deepcopy
 from tracktree import TrackTree
+from graph import Graph
 
 
 class OpenMHT:
@@ -15,9 +16,18 @@ class OpenMHT:
         self.frame_number = 0
         self.track_trees = []  # Track hypotheses for detections in each frame
         self.detection_count = 0
+        self.graph = Graph()  # Graph with tracks as vertices
 
-    def global_hypothesis(self, trees):
-        pass
+    def global_hypothesis(self):
+        print("# of tracks: {}".format(len(self.track_trees)))
+        t1 = self.track_trees[0]
+        count = 0
+        for i in range(1, len(self.track_trees)):
+            if t1.has_conflict(self.track_trees[i]):
+                pass
+            else:
+                count += 1
+        print("Non-conflicts: {}".format(count))
 
     def get_detections(self):
         return self.detections.pop()
@@ -54,6 +64,8 @@ class OpenMHT:
             self.detection_count += len(detections) + 1  # +1 for the missing detection ID
 
         print("Done")
-        for i in range(len(self.track_trees)):
-            # print("\nTrack {}".format(i))
-            self.track_trees[i].print_data()
+        # for i in range(len(self.track_trees)):
+        #     # print("\nTrack {}".format(i))
+        #     self.track_trees[i].print_data()
+
+        gh = self.global_hypothesis()
