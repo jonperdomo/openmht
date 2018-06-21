@@ -8,8 +8,8 @@ class KalmanFilter:
     """
     def __init__(self, initial_observation):
         # For 2D X & Y pixel positions
-        print("initial observation: {}".format(initial_observation))
-        print("initial observation shape: {}".format(np.matrix(initial_observation).T.shape))
+        # print("initial observation: {}".format(initial_observation))
+        # print("initial observation shape: {}".format(np.matrix(initial_observation).T.shape))
         self.z = [np.matrix(initial_observation).T]  # observations
         self.Q = np.matrix(np.eye(2)) * 1e-5
 
@@ -26,9 +26,9 @@ class KalmanFilter:
 
     def update(self, z):
         self.z.append(z)
-        print("\n\nPredicted position (mu): {}".format(self.xhat[-1]))
-        print("\n\nActual position: {}".format(z))
-        print("\n\nCovariance (sigma): {}".format(self.P[-1]))
+        # print("\nPredicted position (mu): {}".format(self.xhat[-1]))
+        # print("\nActual position: {}".format(z))
+        # print("\nCovariance (sigma): {}".format(self.P[-1]))
 
         # get the likelihood score
         L = self.calculate_likelihood(z, self.xhat[-1], self.P[-1])
@@ -52,16 +52,16 @@ class KalmanFilter:
         x = np.squeeze(x)
         mu = np.array(mu).ravel('F')
         if mu.shape != (2,):
-            print("Incorrect dimensions for mu: {}".format(mu.shape))
-            print("\n\nmu: {}".format(mu))
+            # print("Incorrect dimensions for mu: {}".format(mu.shape))
+            # print("\n\nmu: {}".format(mu))
             return 1.0
         sigma = np.matrix(sigma).reshape((2, 2))
-        print("\n\nmu: {}".format(mu))
-        print("\n\nmu: {}".format(mu.shape))
-        print("\n\nx: {}".format(x))
-        print("\n\nx: {}".format(x.shape))
-        print("\n\nsigma: {}".format(sigma))
-        print("\n\nsigma: {}".format(sigma.shape))
+        # print("\n\nmu: {}".format(mu))
+        # print("\n\nmu: {}".format(mu.shape))
+        # print("\n\nx: {}".format(x))
+        # print("\n\nx: {}".format(x.shape))
+        # print("\n\nsigma: {}".format(sigma))
+        # print("\n\nsigma: {}".format(sigma.shape))
         size = len(x)
         if size == len(mu) and (size, size) == sigma.shape:
             det = np.linalg.det(sigma)
@@ -72,7 +72,7 @@ class KalmanFilter:
             x_mu = np.matrix(x - mu)
             inv = sigma.I
             part1 = (x_mu * inv * x_mu.T)
-            print("\n\npart 1:\n{}".format(part1))
+            # print("\n\npart 1:\n{}".format(part1))
             result = math.pow(math.e, -0.5 * (x_mu * inv * x_mu.T))
             L = norm_const * result
             return L
