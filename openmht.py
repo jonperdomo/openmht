@@ -2,8 +2,8 @@ import sys
 # import kalmanfilter as kf
 import numpy as np
 from copy import deepcopy
-from tracktree import TrackTree
-from graph import Graph
+from track_tree import TrackTree
+from weighted_graph import WeightedGraph
 
 
 class OpenMHT:
@@ -16,18 +16,33 @@ class OpenMHT:
         self.frame_number = 0
         self.track_trees = []  # Track hypotheses for detections in each frame
         self.detection_count = 0
-        self.graph = Graph()  # Graph with tracks as vertices
+        self.graph = WeightedGraph()  # Graph with tracks as vertices
+        self.last_vertex_id = ""  # ID of the previously added vertex
 
     def global_hypothesis(self):
+        '''
+        Generate a global hypothesis by finding the maximum weighted independent
+        set of a graph with tracks as vertices, and edges between conflicting tracks.
+        '''
         print("# of tracks: {}".format(len(self.track_trees)))
-        t1 = self.track_trees[0]
-        count = 0
-        for i in range(1, len(self.track_trees)):
-            if t1.has_conflict(self.track_trees[i]):
-                pass
-            else:
-                count += 1
-        print("Non-conflicts: {}".format(count))
+        all_trees = list(self.track_trees)
+        tree_count = len(all_trees)
+        vertex_ids = dict(zip(all_trees, [str(i) for i in range(tree_count)]))  # Generate the vertex ID's
+
+        while all_trees:
+
+            next_tree = all_trees.pop()
+            vertex_id = vertex_ids[next_tree]
+            motion_score = next_tree.get_motion_score()
+            self.graph.add_weighted_vertex(vertex_id, motion_score)
+
+            for i in range(len(all_trees)):
+                available_tree = all_trees[i]
+                if next_tree.has_conflict(available_tree):
+                    edge_vertex_id = vertex_ids[available_tree]
+                    self.graph.add_edge({vertex_id, edge_vertex_id})
+
+        self.print_data()
 
     def get_detections(self):
         return self.detections.pop()
@@ -69,3 +84,14 @@ class OpenMHT:
         #     self.track_trees[i].print_data()
 
         gh = self.global_hypothesis()
+
+
+    def print_data(self):
+        # print("\nTrack tree starting at frame #{}".format(self.frame_number))
+        # print("\nFinal score: {}".format(round(self.motion_score, 3)))
+        print("\nFinal MHT graph:")
+        print(self.graph)
+        #
+        # print("\nPositions:")
+        # for vertex_id in self.graph.vertices():
+        #     print(self.vertex_ids[vertex_id])

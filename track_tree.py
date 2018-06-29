@@ -1,4 +1,4 @@
-from kalmanfilter import KalmanFilter
+from kalman_filter import KalmanFilter
 from graph import Graph
 
 
@@ -13,10 +13,13 @@ class TrackTree:
         self.motion_score = 1.0  # The final motion score for the track
         self.graph = Graph()  # Graph with detections as vertices
         self.last_vertex_id = ""  # ID of the previously added vertex
-        self.vertex_coordinates = {}  # Vertex ID's (key) with their coordinate position (value)
+        self.vertex_ids = {}  # Vertex ID's (key) with their coordinate position (value)
 
     def get_frame_number(self):
         return self.frame_number
+
+    def get_motion_score(self):
+        return self.motion_score
 
     def get_vertices(self):
         return self.graph.vertices()
@@ -49,7 +52,7 @@ class TrackTree:
             else:
                 self.kf = KalmanFilter(detection)  # Initialize the Kalman filter
 
-        self.vertex_coordinates[vertex_id] = detection  # Record the vertex coordinate
+        self.vertex_ids[vertex_id] = detection  # Record the vertex coordinate
 
     def print_data(self):
         print("\nTrack tree starting at frame #{}".format(self.frame_number))
@@ -59,4 +62,4 @@ class TrackTree:
 
         print("\nPositions:")
         for vertex_id in self.graph.vertices():
-            print(self.vertex_coordinates[vertex_id])
+            print(self.vertex_ids[vertex_id])
