@@ -87,11 +87,6 @@ class OpenMHT:
 
 
     def print_data(self):
-        # print("\nTrack tree starting at frame #{}".format(self.frame_number))
-        # print("\nFinal score: {}".format(round(self.motion_score, 3)))
         print("\nFinal MHT graph:")
         print(self.graph)
-        #
-        # print("\nPositions:")
-        # for vertex_id in self.graph.vertices():
-        #     print(self.vertex_ids[vertex_id])
+        self.graph.mwis()
