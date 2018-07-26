@@ -20,13 +20,33 @@ class WeightedGraph(Graph):
         support_ratios = np.zeros(n)  # Record the support ratios for each vertex
         edges = self.edges()
         # while edges:
-        for i in range(n):
-            vertex_id = str(i)
-            degree = self.vertex_degree(vertex_id)
-            support = self.vertex_support(vertex_id)
-            weight = self.vertex_weights[vertex_id]
-            support_ratio = (support * float(degree)) / float(weight)  # Final support ratio
-            support_ratios[i] = support_ratio
+        mwis = np.ones(n)
+        limit = 50
+        ind = 0
+        while adj_mat.any() and ind < limit:
+            for i in range(n):
+                vertex_id = str(i)
+                degree = self.vertex_degree(vertex_id)
+                support = self.vertex_support(vertex_id)
+                weight = self.vertex_weights[vertex_id]
+                support_ratio = (support * float(degree)) / float(weight)  # Final support ratio
+                support_ratios[i] = support_ratio
+
+            # Find the maximum support ratio, and add this to the vertex cover
+            max_id = np.argmax(support_ratios)
+            mwis[max_id] = 0
+
+            # Remove the vertex edges from the adjacency matrix
+            adj_mat[:, max_id] = 0
+            adj_mat[max_id, :] = 0
+
+            ind += 1
+            print("max ID: {}".format(max_id))
+            # print("\nAdj mat: {}".format(adj_mat))
+            # print("\nAdj mat: {}".format(len(np.nonzero(adj_mat))))
+
+        # Get the final maximum weighted independent set, S(G)=V-Vc
+        mwis_ids = np.nonzero(mwis)
 
         print("SR's:\n{}".format(support_ratios))
 
