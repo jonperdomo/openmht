@@ -56,10 +56,10 @@ class TrackTree:
 
     def print_data(self):
         print("\nTrack tree starting at frame #{}".format(self.frame_number))
-        print("\nFinal score: {}".format(round(self.motion_score, 3)))
-        print("\nFinal graph:")
-        print(self.graph)
+        # print("\nFinal score: {}".format(round(self.motion_score, 3)))
+        # print("\nFinal graph:")
+        # print(self.graph)
 
-        print("\nPositions:")
+        # print("\nPositions:")
         for vertex_id in self.graph.vertices():
             print(self.vertex_ids[vertex_id])

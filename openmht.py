@@ -17,7 +17,6 @@ class OpenMHT:
         self.track_trees = []  # Track hypotheses for detections in each frame
         self.detection_count = 0
         self.graph = WeightedGraph()  # Graph with tracks as vertices
-        self.last_vertex_id = ""  # ID of the previously added vertex
 
     def global_hypothesis(self):
         '''
@@ -83,10 +82,14 @@ class OpenMHT:
         #     # print("\nTrack {}".format(i))
         #     self.track_trees[i].print_data()
 
-        gh = self.global_hypothesis()
+        self.global_hypothesis()
 
 
     def print_data(self):
         print("\nFinal MHT graph:")
         print(self.graph)
-        self.graph.mwis()
+        mwis_ids = self.graph.mwis()
+        print("MWIS: {}".format(mwis_ids))
+        for track_tree_id in mwis_ids:
+            track_tree = self.track_trees[track_tree_id]
+            track_tree.print_data()

@@ -4,6 +4,8 @@ facts and functionalities of graphs.
 https://www.python-course.eu/graphs_python.php
 """
 
+import numpy as np
+
 
 class Graph(object):
     def __init__(self, graph_dict=None):
@@ -11,8 +13,9 @@ class Graph(object):
             If no dictionary or None is given,
             an empty dictionary will be used
         """
-        if graph_dict == None:
+        if graph_dict is None:
             graph_dict = {}
+
         self.__graph_dict = graph_dict
 
     def vertices(self):
@@ -72,6 +75,25 @@ class Graph(object):
                 isolated += [vertex]
         return isolated
 
+    def adjacency_matrix(self):
+        """
+        Generate the adjacency matrix:
+        https://en.wikipedia.org/wiki/Adjacency_matrix
+        """
+
+        max_value = max([int(vid) for vid in self.vertices()])+1  # Find the maximum vertex ID (+1 since 0-indexed)
+        adj_mat = np.zeros((max_value, max_value))  # Create the NxN matrix
+
+        # Populate the adjacency matrix from the edges
+        edges = self.edges()
+        while edges:
+            edge = edges.pop()
+            i, j = [int(vertex_id) for vertex_id in edge]  # Get the matrix indices
+            adj_mat[i, j] = 1
+            adj_mat[j, i] = 1
+
+        return adj_mat
+
     def vertex_degree(self, vertex):
         """ The degree of a vertex is the number of edges connecting
             it, i.e. the number of adjacent vertices. Loops are counted
@@ -82,6 +104,15 @@ class Graph(object):
         degree = len(adj_vertices) + adj_vertices.count(vertex)
         return degree
 
+    def vertex_degrees(self, adj_mat):
+        """ The degree of a vertex is the number of edges connecting
+            it, i.e. the number of adjacent vertices. Loops are counted
+            double, i.e. every occurence of vertex in the list
+            of adjacent vertices
+        """
+        degrees = adj_mat.sum(axis=1)
+        return degrees
+
     def vertex_support(self, vertex):
         """ The support of a vertex is defined by the
             sum of the degree of the vertices which are
@@ -90,6 +121,17 @@ class Graph(object):
         adj_vertices = self.__graph_dict[vertex]
         support = sum([self.vertex_degree(vid) for vid in adj_vertices])
         return support
+
+    def vertex_supports(self, adj_mat, degrees):
+        """ The support of a vertex is defined by the
+            sum of the degree of the vertices which are
+            adjacent to it
+        """
+        supports = np.zeros(degrees.shape)
+        for edge in np.transpose(np.nonzero(adj_mat)):
+            supports[edge[0]] += degrees[edge[1]]
+
+        return supports
 
     def __generate_edges(self):
         """ A static method generating the edges of the
