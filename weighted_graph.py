@@ -18,11 +18,12 @@ class WeightedGraph(Graph):
         adj_mat = self.adjacency_matrix()
         n = adj_mat.shape[0]
         mwis = np.ones(n)
+        weights = self.vertex_weights
+        print("\nweights: {}".format(weights))
 
         while adj_mat.any():
             degrees = self.vertex_degrees(adj_mat)
             supports = self.vertex_supports(adj_mat, degrees)
-            weights = self.vertex_weights
             support_ratios = (supports * degrees) / np.array(weights)
 
             # Find the maximum support ratio, and add this to the vertex cover

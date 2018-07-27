@@ -52,7 +52,7 @@ class OpenMHT:
         while self.detections:
             self.frame_number += 1
             detections = self.detections.pop()
-            print("Number of detections: {}".format(len(detections)))
+            # print("Number of detections: {}".format(len(detections)))
 
             # Update the previous track trees from the detections
             updated_track_trees = []
@@ -86,10 +86,11 @@ class OpenMHT:
 
 
     def print_data(self):
-        print("\nFinal MHT graph:")
-        print(self.graph)
+        # print("\nFinal MHT graph:")
+        # print(self.graph)
         mwis_ids = self.graph.mwis()
-        print("MWIS: {}".format(mwis_ids))
+        # print("MWIS: {}".format(mwis_ids))
+        print("Results:")
         for track_tree_id in mwis_ids:
             track_tree = self.track_trees[track_tree_id]
             track_tree.print_data()
