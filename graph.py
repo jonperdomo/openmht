@@ -70,7 +70,6 @@ class Graph(object):
         graph = self.__graph_dict
         isolated = []
         for vertex in graph:
-            # print(isolated, vertex)
             if not graph[vertex]:
                 isolated += [vertex]
         return isolated

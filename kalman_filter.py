@@ -52,16 +52,9 @@ class KalmanFilter:
         x = np.squeeze(x)
         mu = np.array(mu).ravel('F')
         if mu.shape != (2,):
-            # print("Incorrect dimensions for mu: {}".format(mu.shape))
-            # print("\n\nmu: {}".format(mu))
             return 1.0
+
         sigma = np.matrix(sigma).reshape((2, 2))
-        # print("\n\nmu: {}".format(mu))
-        # print("\n\nmu: {}".format(mu.shape))
-        # print("\n\nx: {}".format(x))
-        # print("\n\nx: {}".format(x.shape))
-        # print("\n\nsigma: {}".format(sigma))
-        # print("\n\nsigma: {}".format(sigma.shape))
         size = len(x)
         if size == len(mu) and (size, size) == sigma.shape:
             det = np.linalg.det(sigma)
@@ -71,8 +64,6 @@ class KalmanFilter:
             norm_const = 1.0 / (math.pow((2 * math.pi), float(size) / 2) * math.pow(det, 1.0 / 2))
             x_mu = np.matrix(x - mu)
             inv = sigma.I
-            part1 = (x_mu * inv * x_mu.T)
-            # print("\n\npart 1:\n{}".format(part1))
             result = math.pow(math.e, -0.5 * (x_mu * inv * x_mu.T))
             L = norm_const * result
             return L
