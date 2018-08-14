@@ -10,7 +10,7 @@ def get_test_detections():
     """
     :return: An array of randomly-generated detections (ijk) for each frame.
     """
-    frame_count = 10
+    frame_count = 3
     dimensionality = 2
 
     # Truth values for 3 objects
@@ -19,7 +19,7 @@ def get_test_detections():
     for i in range(len(truth_values)):
         detections[:, i] = np.random.normal(truth_values[i], 0.1, size=(frame_count, dimensionality))
 
-    print("Detections: {}".format(detections))
+    # print("Detections: {}".format(detections))
     return detections
 
 if __name__ == "__main__":

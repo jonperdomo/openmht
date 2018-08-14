@@ -47,7 +47,7 @@ class OpenMHT:
         return self.detections.pop()
 
     def run(self):
-        print("Number of frames: {}".format(len(self.detections)))
+        # print("Number of frames: {}".format(len(self.detections)))
 
         while self.detections:
             self.frame_number += 1
