@@ -1,6 +1,7 @@
 import math
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy.stats import multivariate_normal
 
 class KalmanFilter:
     """
@@ -75,9 +76,7 @@ class KalmanFilter:
         assert sigma.shape == (self.dims, self.dims), "Sigma shape did not match dimensions {}".format(sigma.shape)
         print("Shapes: x: {}, mu: {}, sigma: {}".format(x, mu, sigma))
 
-        _, evec_sigma = np.linalg.eig(np.abs(sigma))
-        ln_sigma = np.linalg.inv(evec_sigma)
-        np.fill_diagonal(ln_sigma, np.log(ln_sigma.diagonal()))
+        ln_sigma = np.log(np.linalg.det(sigma))
 
         op2 = (x-mu).T
 
@@ -87,56 +86,17 @@ class KalmanFilter:
 
         op5 = op3 * op4
 
-        op6 = 3. * np.log(np.pi)
+        op6 = float(self.dims) * np.log(2. * np.pi)
 
         op7 = op5 + op6
 
-        x = np.squeeze(x)
-        mu = np.array(mu).ravel('F')
-        if mu.shape != (2,):
-            return 1.0
+        lnL = -0.5 * (ln_sigma + op7)
 
-        sigma = np.matrix(sigma).reshape((2, 2))
-        size = len(x)
-        if size == len(mu) and (size, size) == sigma.shape:
-            det = np.linalg.det(sigma)
-            if det == 0:
-                raise NameError("The covariance matrix can't be singular")
+        # For testing my implementation above, compare with the result from the equivalent SciPy function (below)
+        # X = np.array(x).flatten()
+        # mean = np.array(mu).flatten()
+        # L = multivariate_normal.logpdf(X, mean=mean, cov=sigma)
 
-            norm_const = 1.0 / (math.pow((2 * math.pi), float(size) / 2) * math.pow(det, 1.0 / 2))
-            x_mu = np.matrix(x - mu)
-            inv = sigma.I
-            result = math.pow(math.e, -0.5 * (x_mu * inv * x_mu.T))
-            L = norm_const * result
-            print("L: {}".format(L))
-            return L
-        else:
-            raise NameError("The dimensions of the input don't match")
+        print("done")
 
-    def calculate_likelihood_DEPR(self, x, mu, sigma):
-        """
-        Likelihood function for a multivariate normal distribution.
-        https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Likelihood_function
-        """
-        print("Shapes: x: {}, mu: {}, sigma: {}".format(x, mu, sigma))
-        x = np.squeeze(x)
-        mu = np.array(mu).ravel('F')
-        if mu.shape != (2,):
-            return 1.0
-
-        sigma = np.matrix(sigma).reshape((2, 2))
-        size = len(x)
-        if size == len(mu) and (size, size) == sigma.shape:
-            det = np.linalg.det(sigma)
-            if det == 0:
-                raise NameError("The covariance matrix can't be singular")
-
-            norm_const = 1.0 / (math.pow((2 * math.pi), float(size) / 2) * math.pow(det, 1.0 / 2))
-            x_mu = np.matrix(x - mu)
-            inv = sigma.I
-            result = math.pow(math.e, -0.5 * (x_mu * inv * x_mu.T))
-            L = norm_const * result
-            print("L: {}".format(L))
-            return L
-        else:
-            raise NameError("The dimensions of the input don't match")
+        return lnL
