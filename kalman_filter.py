@@ -34,38 +34,34 @@ class KalmanFilter:
         self.R = 0.1 ** 2  # estimate of measurement variance, change to see effect
 
     def update(self, z):
-        pass
-        # x = np.matrix(z).reshape((self.dims, 1))
-        # self.z.append(x)
-        # # print("\nPredicted position (mu): {}".format(self.xhat[-1]))
-        #
-        # # time update
-        # self.xhatminus.append(mu)
-        # Pminus = sigma + self.Q
-        # self.Pminus.append(Pminus)
-        #
-        # # measurement update
-        # K = sigma / (sigma + self.R)
-        # self.K.append(K)
-        #
-        # xhat_a = mu + K
-        # print("a shape: {}".format(xhat_a.shape))
-        # xhat_b = x - mu
-        # print("b shape: {}".format(xhat_b.shape))
-        # xhat = np.matrix(xhat_a) * np.matrix(xhat_b).reshape((self.dims, 1))
-        # self.xhat.append(xhat)
-        #
-        # P = (1.0 - K) * Pminus
-        # self.P.append(P)
-        #
-        # # self.xhat.append(self.xhatminus[-1] + self.K[-1] * (self.z[-1] - self.xhatminus[-1]))  # Check outputs here
-        # # self.P.append((1.0 - self.K[-1]) * self.Pminus[-1])
-        #
-        # return L
+
+        # Time update
+        x = np.matrix(z).reshape((self.dims, 1))
+        mu = self.xhat[-1]
+        sigma = self.P[-1] + self.Q
+
+        L = self.calculate_likelihood(x, mu, sigma)
+
+        self.z.append(x)
+        self.xhatminus.append(mu)
+        self.Pminus.append(sigma)
+
+        # Measurement update
+        K = sigma / (sigma + self.R)
+        self.K.append(K)
+
+        xhat = mu + K * (x - mu)
+        self.xhat.append(xhat)
+
+        I = np.matrix(np.eye(self.dims))  # identity matrix
+        P = (I - K) * sigma
+        self.P.append(P)
+
+        return L
 
     def calculate_likelihood(self, x, mu, sigma):
         """
-        Likelihood function for a multivariate normal distribution.
+        Log-likelihood function for a multivariate normal distribution.
         https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Likelihood_function
         sigma: k x k covariance matrix
         x: single observation
@@ -74,9 +70,11 @@ class KalmanFilter:
         assert x.shape == (self.dims, 1), "X shape did not match dimensions {}".format(x.shape)
         assert mu.shape == (self.dims, 1), "Mu shape did not match dimensions {}".format(mu.shape)
         assert sigma.shape == (self.dims, self.dims), "Sigma shape did not match dimensions {}".format(sigma.shape)
-        print("Shapes: x: {}, mu: {}, sigma: {}".format(x, mu, sigma))
+        # print("Shapes: x: {}, mu: {}, sigma: {}".format(x, mu, sigma))
 
         ln_sigma = np.log(np.linalg.det(sigma))
+        # print("Sigma: {}".format(sigma))
+        # print("Det: {}".format(np.linalg.det(sigma)))
 
         op2 = (x-mu).T
 
@@ -90,13 +88,11 @@ class KalmanFilter:
 
         op7 = op5 + op6
 
-        lnL = -0.5 * (ln_sigma + op7)
+        lnL = (-0.5 * (ln_sigma + op7)).item()
 
-        # For testing my implementation above, compare with the result from the equivalent SciPy function (below)
-        # X = np.array(x).flatten()
-        # mean = np.array(mu).flatten()
-        # L = multivariate_normal.logpdf(X, mean=mean, cov=sigma)
+        # Compare with the result from the equivalent SciPy function (below)
+        # L = multivariate_normal.logpdf(np.array(x).flatten(), mean=np.array(mu).flatten(), cov=sigma)
 
-        print("done")
+        # print("done")
 
         return lnL

@@ -18,7 +18,7 @@ class WeightedGraph(Graph):
         adj_mat = self.adjacency_matrix()
         n = adj_mat.shape[0]
         mwis = np.ones(n)
-        weights = self.vertex_weights
+        weights = self.normalize_weights(self.vertex_weights)
         print("\nweights: {}".format(weights))
 
         while adj_mat.any():
@@ -33,6 +33,7 @@ class WeightedGraph(Graph):
             # Remove the vertex edges from the adjacency matrix
             adj_mat[:, max_id] = 0
             adj_mat[max_id, :] = 0
+            # print("Adj_mat: {}".format(np.count_nonzero(adj_mat)))
 
         # Get the final maximum weighted independent set, S(G)=V-Vc
         mwis_vertex_ids = np.nonzero(mwis)[0]
@@ -45,3 +46,13 @@ class WeightedGraph(Graph):
         """
         self.add_vertex(vertex)
         self.vertex_weights.append(weight)
+
+    def normalize_weights(self, weights):
+        """
+        Normalize the weights between (.1, 1)
+        """
+        max_value = max(weights)
+        min_value = min(weights) - .1
+        normalized = (np.array(weights) - min_value) / (max_value - min_value)
+
+        return normalized

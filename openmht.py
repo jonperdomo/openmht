@@ -41,6 +41,7 @@ class OpenMHT:
                     edge_vertex_id = vertex_ids[available_tree]
                     self.graph.add_edge({vertex_id, edge_vertex_id})
 
+        print("GH done.")
         self.print_data()
 
     def get_detections(self):
@@ -77,7 +78,7 @@ class OpenMHT:
 
             self.detection_count += len(detections) + 1  # +1 for the missing detection ID
 
-        print("Done")
+        print("tracks done")
         # for i in range(len(self.track_trees)):
         #     # print("\nTrack {}".format(i))
         #     self.track_trees[i].print_data()
