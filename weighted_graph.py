@@ -11,34 +11,45 @@ class WeightedGraph(Graph):
         self.vertex_weights = []
 
     def mwis(self):
-        """
-        Find the maximum weighted independent set using vertex support:
-        https://waset.org/publications/12153/approximating-maximum-weighted-independent-set-using-vertex-support
-        """
-        adj_mat = self.adjacency_matrix()
-        n = adj_mat.shape[0]
-        mwis = np.ones(n)
-        weights = self.normalize_weights(self.vertex_weights)
-        print("\nweights: {}".format(weights))
+        """Determine the maximum weighted independent set."""
+        print("\nweights: {}".format(self.vertex_weights))
 
-        while adj_mat.any():
-            degrees = self.vertex_degrees(adj_mat)
-            supports = self.vertex_supports(adj_mat, degrees)
-            support_ratios = (supports * degrees) / np.array(weights)
+        # Find all maximal independent sets
+        complement = self.complement()
+        print("\n------\nComplement:\n{}".format(complement))
+        R = []
+        P = list(range(len(self.vertices())))
+        X = []
+        ind_sets = list(self.bron_kerbosch(R, P, X, complement))
 
-            # Find the maximum support ratio, and add this to the vertex cover
-            max_id = np.argmax(support_ratios)
-            mwis[max_id] = 0
+        # Find the maximum weighted set
+        max_weight = min(self.vertex_weights)
+        mwis = []
+        for ind_set in ind_sets:
+            set_weight = sum([self.vertex_weights[i] for i in ind_set])
+            if set_weight > max_weight:
+                max_weight = set_weight
+                mwis = ind_set
 
-            # Remove the vertex edges from the adjacency matrix
-            adj_mat[:, max_id] = 0
-            adj_mat[max_id, :] = 0
-            # print("Adj_mat: {}".format(np.count_nonzero(adj_mat)))
+        print("\nmwis: {}".format(mwis))
 
-        # Get the final maximum weighted independent set, S(G)=V-Vc
-        mwis_vertex_ids = np.nonzero(mwis)[0]
+        return mwis
 
-        return mwis_vertex_ids
+    def bron_kerbosch(self, R, P, X, g):
+        if not any((P, X)):
+            yield R
+
+        for v in P[:]:
+            R_v = R + [v]
+            P_v = [v1 for v1 in P if v1 in self.N(v, g)]
+            X_v = [v1 for v1 in X if v1 in self.N(v, g)]
+            for r in self.bron_kerbosch(R_v, P_v, X_v, g):
+                yield r
+            P.remove(v)
+            X.append(v)
+
+    def N(self, v, g):
+        return [i for i, n_v in enumerate(g[v]) if n_v]
 
     def add_weighted_vertex(self, vertex, weight):
         """
@@ -47,12 +58,10 @@ class WeightedGraph(Graph):
         self.add_vertex(vertex)
         self.vertex_weights.append(weight)
 
-    def normalize_weights(self, weights):
-        """
-        Normalize the weights between (.1, 1)
-        """
-        max_value = max(weights)
-        min_value = min(weights) - .1
-        normalized = (np.array(weights) - min_value) / (max_value - min_value)
+    def __str__(self):
+        res = super(WeightedGraph, self).__str__()
+        res += "\nweights: "
+        for w in self.vertex_weights:
+            res += str(w) + " "
 
-        return normalized
+        return res

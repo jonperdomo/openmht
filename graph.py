@@ -32,6 +32,7 @@ class Graph(object):
             list as a value is added to the dictionary.
             Otherwise nothing has to be done.
         """
+        # print("Added vertex: {}".format(vertex))
         if vertex not in self.__graph_dict:
             self.__graph_dict[vertex] = []
 
@@ -84,12 +85,29 @@ class Graph(object):
         adj_mat = np.zeros((max_value, max_value))  # Create the NxN matrix
 
         # Populate the adjacency matrix from the edges
-        edges = self.edges()
+        edges = list(self.edges())
         while edges:
             edge = edges.pop()
             i, j = [int(vertex_id) for vertex_id in edge]  # Get the matrix indices
             adj_mat[i, j] = 1
             adj_mat[j, i] = 1
+
+        return adj_mat
+
+    def complement(self):
+        """Generate the adjacency matrix for the complement graph."""
+
+        max_value = max([int(vid) for vid in self.vertices()])+1  # Find the maximum vertex ID (+1 since 0-indexed)
+        adj_mat = np.ones((max_value, max_value))  # Create the NxN matrix
+        np.fill_diagonal(adj_mat, 0)  # Format as the complete matrix
+
+        # Remove the current edges
+        edges = list(self.edges())
+        while edges:
+            edge = edges.pop()
+            i, j = [int(vertex_id) for vertex_id in edge]  # Get the matrix indices
+            adj_mat[i, j] = 0
+            adj_mat[j, i] = 0
 
         return adj_mat
 
@@ -127,7 +145,8 @@ class Graph(object):
             adjacent to it
         """
         supports = np.zeros(degrees.shape)
-        for edge in np.transpose(np.nonzero(adj_mat)):
+        edges = np.transpose(np.nonzero(adj_mat))
+        for edge in edges:
             supports[edge[0]] += degrees[edge[1]]
 
         return supports

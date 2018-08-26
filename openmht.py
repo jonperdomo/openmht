@@ -17,6 +17,7 @@ class OpenMHT:
         self.track_trees = []  # Track hypotheses for detections in each frame
         self.detection_count = 0
         self.graph = WeightedGraph()  # Graph with tracks as vertices
+        self.final_mwis = None
 
     def global_hypothesis(self):
         '''
@@ -27,7 +28,6 @@ class OpenMHT:
         all_trees = list(self.track_trees)
         tree_count = len(all_trees)
         vertex_ids = dict(zip(all_trees, [str(i) for i in range(tree_count)]))  # Generate the vertex ID's
-
         while all_trees:
 
             next_tree = all_trees.pop()
@@ -41,23 +41,18 @@ class OpenMHT:
                     edge_vertex_id = vertex_ids[available_tree]
                     self.graph.add_edge({vertex_id, edge_vertex_id})
 
-        print("GH done.")
-        self.print_data()
-
     def get_detections(self):
         return self.detections.pop()
 
     def run(self):
-        # print("Number of frames: {}".format(len(self.detections)))
-
         while self.detections:
             self.frame_number += 1
             detections = self.detections.pop()
-            # print("Number of detections: {}".format(len(detections)))
 
             # Update the previous track trees from the detections
             updated_track_trees = []
             for track_tree in self.track_trees:
+
                 # Generate updated track trees from the detections
                 for i in range(len(detections)):
                     detection, vertex_id = detections[i], str(self.detection_count + i)
@@ -78,20 +73,26 @@ class OpenMHT:
 
             self.detection_count += len(detections) + 1  # +1 for the missing detection ID
 
-        print("tracks done")
-        # for i in range(len(self.track_trees)):
-        #     # print("\nTrack {}".format(i))
-        #     self.track_trees[i].print_data()
+        print("Generated all track hypotheses")
 
         self.global_hypothesis()
+        print("Generated the global hypothesis graph.")
 
+        self.final_mwis = self.graph.mwis()
+        print("Calculated the MWIS.")
 
-    def print_data(self):
-        # print("\nFinal MHT graph:")
-        # print(self.graph)
-        mwis_ids = self.graph.mwis()
-        # print("MWIS: {}".format(mwis_ids))
-        print("Results:")
-        for track_tree_id in mwis_ids:
+    def __str__(self):
+        results = "\n\n--------\nAll trees:"
+        for i in range(len(self.track_trees)):
+            results += "\nID: {}".format(i+1)
+            results += str(self.track_trees[i])
+
+        results += "\n\n--------\nResults:"
+        for track_tree_id in self.final_mwis:
             track_tree = self.track_trees[track_tree_id]
-            track_tree.print_data()
+            results += "\nID: {}".format(track_tree_id)
+            results += str(track_tree)
+
+        results += "\nCompleted."
+
+        return results
