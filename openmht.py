@@ -12,7 +12,6 @@ class OpenMHT:
     """
     def __init__(self, detections):
         self.detections = list(detections)
-        self.frame_count, _, self.dimensionality = detections.shape
         self.frame_number = 0
         self.track_trees = []  # Track hypotheses for detections in each frame
         self.detection_count = 0

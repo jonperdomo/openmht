@@ -8,7 +8,6 @@ class TrackTree:
     """
     def __init__(self, frame_number):
         self.frame_number = frame_number  # The frame number where this track begins
-        self.image_area = 100.0  # TODO: Replace with actual frame dimensions
         self.kf = None  # Kalman filter for calculating the motion score
         self.motion_score = 0.  # The final motion score for the track
         self.graph = Graph()  # Graph with detections as vertices
