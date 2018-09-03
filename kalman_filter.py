@@ -1,14 +1,12 @@
-import math
 import numpy as np
-import matplotlib.pyplot as plt
-from scipy.stats import multivariate_normal
+# from scipy.stats import multivariate_normal
 
 class KalmanFilter:
     """
     Kalman filter for 2D & 3D vectors.
     """
     def __init__(self, initial_observation):
-        self.dims = initial_observation.shape[0]
+        self.dims = len(initial_observation)
         x = np.matrix(initial_observation).reshape((self.dims, 1))
         self.z = [x]  # observations
         self.Q = np.matrix(np.eye(self.dims)) * 1e-5

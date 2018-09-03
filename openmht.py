@@ -1,7 +1,12 @@
+#!/usr/bin/env python
+
+import os
 import sys
-# import kalmanfilter as kf
-import numpy as np
+import getopt
+import time
+import csv
 from copy import deepcopy
+
 from track_tree import TrackTree
 from weighted_graph import WeightedGraph
 
@@ -19,11 +24,11 @@ class OpenMHT:
         self.final_mwis = None
 
     def global_hypothesis(self):
-        '''
+        """
         Generate a global hypothesis by finding the maximum weighted independent
         set of a graph with tracks as vertices, and edges between conflicting tracks.
-        '''
-        print("# of tracks: {}".format(len(self.track_trees)))
+        """
+        print(f"\t\tGenerating the track tree graph...")
         all_trees = list(self.track_trees)
         tree_count = len(all_trees)
         vertex_ids = dict(zip(all_trees, [str(i) for i in range(tree_count)]))  # Generate the vertex ID's
@@ -40,12 +45,18 @@ class OpenMHT:
                     edge_vertex_id = vertex_ids[available_tree]
                     self.graph.add_edge({vertex_id, edge_vertex_id})
 
+        print(f"\t\tCalculating the MWIS...")
+        mwis_ids = self.graph.mwis()
+        mwis_track_trees = [self.track_trees[i] for i in mwis_ids]
+
+        return mwis_track_trees
+
     def get_detections(self):
         return self.detections.pop()
 
     def run(self):
+        print(f"\tGenerating all track trees...")
         while self.detections:
-            self.frame_number += 1
             detections = self.detections.pop()
 
             # Update the previous track trees from the detections
@@ -71,14 +82,15 @@ class OpenMHT:
                 self.track_trees.append(track_tree)
 
             self.detection_count += len(detections) + 1  # +1 for the missing detection ID
+            self.frame_number += 1
 
-        print("Generated all track hypotheses")
+        print("\tGenerating the global hypothesis...")
 
-        self.global_hypothesis()
-        print("Generated the global hypothesis graph.")
+        final_track_trees = self.global_hypothesis()
 
-        self.final_mwis = self.graph.mwis()
-        print("Calculated the MWIS.")
+        print("\tGlobal hypothesis complete.")
+
+        return final_track_trees
 
     def __str__(self):
         results = "\n\n--------\nAll trees:"
@@ -95,3 +107,140 @@ class OpenMHT:
         results += "\nCompleted."
 
         return results
+
+
+def read_uv_csv(file_path, frame_max=100):
+    """
+    Read detections from a CSV.
+    Expected column headers are:
+    Frame number, U, V
+    """
+    print(f"Reading CSV: {file_path} ...")
+    detections = []
+    with open(file_path) as csv_file:
+        csv_reader = csv.reader(csv_file, delimiter=',')
+        line_count = 0
+        current_frame = None
+        detection_index = 0
+        for row in csv_reader:
+            if line_count == 0:
+                print(f'Column names are {", ".join(row)}')
+                line_count += 1
+            else:
+                frame_number, u, v = [int(i) for i in row[:3]]
+                if frame_number != current_frame:
+                    detection_index = len(detections)
+                    if detection_index == frame_max:
+                        break
+
+                    detections.append([])
+                    current_frame = frame_number
+
+                detections[detection_index].append([u, v])
+                # print(f'\t{frame_number}:\t[{u},\t{v}]')
+                line_count += 1
+
+        print(f'Processed {line_count-1} detections.')
+        print(f'Number of frames: {len(detections)}')
+        # print(*detections, sep="\n")
+
+    return detections
+
+
+def write_uv_csv(file_path, track_trees):
+    """
+    Write track trees to a CSV.
+    Column headers are:
+    Frame number, track number, U, V
+    """
+    print("Writing CSV: {} ...".format(file_path))
+
+    # Compile the results
+    csv_rows = []
+    for i in range(len(track_trees)):
+        track_tree = track_trees[i]
+        detections = track_tree.get_detections()
+        initial_frame = track_tree.get_frame_number()
+        for j in range(len(detections)):
+            frame = str(initial_frame + j)
+            u, v = [str(x) for x in detections[j]]
+            csv_rows.append([frame, i+1, u, v])
+
+    # Sort the results by frame number
+    csv_rows.sort(key=lambda x: x[0])
+    with open(file_path, 'w') as csv_file:
+        writer = csv.writer(csv_file, lineterminator='\n')
+        writer.writerow(['frame', 'track', 'u', 'v'])
+        writer.writerows(csv_rows)
+
+
+def main(argv):
+    input_file = ''
+    output_file = ''
+
+    try:
+        opts, args = getopt.getopt(argv, "hi:o:", ["ifile=", "ofile="])
+
+    except getopt.GetoptError:
+        print('openmht.py -i <inputfile> -o <outputfile>')
+        sys.exit(2)
+
+    # Parse arguments
+    for opt, arg in opts:
+
+        if opt == '-h':
+            print('openmht.py -i <inputfile> -o <outputfile>')
+            sys.exit()
+
+        elif opt in ("-i", "--ifile"):
+            input_file = arg
+
+        elif opt in ("-o", "--ofile"):
+            output_file = arg
+
+    # Verify CSV file formats
+    try:
+        assert os.path.isfile(input_file), "Input file does not exist: {}".format(input_file)
+        assert os.path.splitext(input_file)[-1].lower() == '.csv', "Input file is not CSV: {}".format(input_file)
+        assert os.path.splitext(input_file)[-1].lower() == '.csv', "Output file is not CSV: {}".format(input_file)
+
+    except AssertionError as e:
+        print(e)
+        sys.exit(2)
+
+    print("Input file is: ", input_file)
+    print("Output file is: ", output_file)
+
+    # Run
+    start = time.time()
+
+    # Read input data
+    detections = read_uv_csv(input_file)
+
+    # # -- Testing section --
+    #
+    # import numpy as np
+    # frame_count = 2
+    # dimensionality = 2
+    #
+    # # Truth values for 3 objects
+    # truth_values = [[0, 0], [10, 10], [15, 15]]
+    # detections = np.zeros((frame_count, len(truth_values), dimensionality))
+    # for i in range(len(truth_values)):
+    #     detections[:, i] = np.random.normal(truth_values[i], 0.1, size=(frame_count, dimensionality))
+    #
+    # # -- End testing section --
+
+    mht = OpenMHT(detections)
+    track_trees = mht.run()
+    write_uv_csv(output_file, track_trees)
+    end = time.time()
+    elapsed_seconds = end - start
+    print("Elapsed time (s) {0:.2f}".format(elapsed_seconds))
+
+    elapsed_formatted = time.strftime('%H:%M:%S', time.gmtime(elapsed_seconds))
+    print(elapsed_formatted)
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

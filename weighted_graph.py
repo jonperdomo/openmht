@@ -1,4 +1,3 @@
-import numpy as np
 from graph import Graph
 
 
@@ -12,11 +11,11 @@ class WeightedGraph(Graph):
 
     def mwis(self):
         """Determine the maximum weighted independent set."""
-        print("\nweights: {}".format(self.vertex_weights))
+        # print("\nweights: {}".format(self.vertex_weights))
 
         # Find all maximal independent sets
         complement = self.complement()
-        print("\n------\nComplement:\n{}".format(complement))
+        # print("\n------\nComplement:\n{}".format(complement))
         R = []
         P = list(range(len(self.vertices())))
         X = []
@@ -31,7 +30,7 @@ class WeightedGraph(Graph):
                 max_weight = set_weight
                 mwis = ind_set
 
-        print("\nmwis: {}".format(mwis))
+        # print("\nmwis: {}".format(mwis))
 
         return mwis
 

@@ -3,7 +3,6 @@ A simple Python graph class, demonstrating the essential
 facts and functionalities of graphs.
 https://www.python-course.eu/graphs_python.php
 """
-
 import numpy as np
 
 

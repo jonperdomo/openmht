@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
 Generate a random 2D test for MHT.
 """
@@ -16,7 +18,7 @@ def get_test_detections():
 
     # Truth values for 3 objects
     # truth_values = [[0, 0], [10, 10], [15, 15]]
-    truth_values = [[0, 0, 0], [10, 10, 10]]
+    truth_values = [[0, 0, 0], [10, 10, 10], [12, 12, 0]]
     detections = np.zeros((frame_count, len(truth_values), dimensionality))
     for i in range(len(truth_values)):
         detections[:, i] = np.random.normal(truth_values[i], 0.1, size=(frame_count, dimensionality))
@@ -31,7 +33,7 @@ if __name__ == "__main__":
     test_points = get_test_detections()
     mht = OpenMHT(test_points)
     mht.run()
-    print(mht)
+    # print(mht)
 
     end = time.time()
     elapsed_seconds = end - start

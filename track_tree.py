@@ -14,6 +14,11 @@ class TrackTree:
         self.last_vertex_id = ""  # ID of the previously added vertex
         self.vertex_coords = {}  # Vertex ID's (key) with their coordinate position (value)
         self.vertex_weights = {}
+        self.detections = []
+
+    def get_detections(self):
+        """"""
+        return self.detections
 
     def get_frame_number(self):
         return self.frame_number
@@ -57,6 +62,7 @@ class TrackTree:
 
         self.vertex_coords[vertex_id] = detection  # Record the vertex coordinate
         self.vertex_weights[vertex_id] = self.motion_score
+        self.detections.append(detection)
 
     def __str__(self):
         results = "\nTrack tree starting at frame #{}".format(self.frame_number)
@@ -64,3 +70,6 @@ class TrackTree:
             results += "\nPos: {}\nWeight:{}\n".format(self.vertex_coords[vertex_id], self.vertex_weights[vertex_id])
 
         return results
+
+     # def __lt__(self, other):
+     #     return self.score < other.score
