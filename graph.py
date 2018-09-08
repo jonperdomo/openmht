@@ -31,7 +31,6 @@ class Graph(object):
             list as a value is added to the dictionary.
             Otherwise nothing has to be done.
         """
-        # print("Added vertex: {}".format(vertex))
         if vertex not in self.__graph_dict:
             self.__graph_dict[vertex] = []
 

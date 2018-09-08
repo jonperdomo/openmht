@@ -69,6 +69,8 @@ class TrackTree:
         for vertex_id in self.graph.vertices():
             results += "\nPos: {}\nWeight:{}\n".format(self.vertex_coords[vertex_id], self.vertex_weights[vertex_id])
 
+        # results += f"\nMotion score: {self.motion_score}"
+
         return results
 
      # def __lt__(self, other):

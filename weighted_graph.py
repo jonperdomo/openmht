@@ -7,30 +7,26 @@ class WeightedGraph(Graph):
     """
     def __init__(self, graph_dict=None):
         Graph.__init__(self, graph_dict)
-        self.vertex_weights = []
+        self.__weights = {}
 
     def mwis(self):
         """Determine the maximum weighted independent set."""
-        # print("\nweights: {}".format(self.vertex_weights))
 
         # Find all maximal independent sets
         complement = self.complement()
-        # print("\n------\nComplement:\n{}".format(complement))
         R = []
         P = list(range(len(self.vertices())))
         X = []
         ind_sets = list(self.bron_kerbosch(R, P, X, complement))
 
         # Find the maximum weighted set
-        max_weight = min(self.vertex_weights)
+        max_weight = min(self.__weights.values())
         mwis = []
         for ind_set in ind_sets:
-            set_weight = sum([self.vertex_weights[i] for i in ind_set])
+            set_weight = sum([self.__weights[str(i)] for i in ind_set])
             if set_weight > max_weight:
                 max_weight = set_weight
                 mwis = ind_set
-
-        # print("\nmwis: {}".format(mwis))
 
         return mwis
 
@@ -55,12 +51,12 @@ class WeightedGraph(Graph):
         Add a weighted vertex to the graph.
         """
         self.add_vertex(vertex)
-        self.vertex_weights.append(weight)
+        self.__weights[vertex] = weight
 
     def __str__(self):
         res = super(WeightedGraph, self).__str__()
         res += "\nweights: "
-        for w in self.vertex_weights:
+        for w in self.__weights.values():
             res += str(w) + " "
 
         return res

@@ -49,6 +49,8 @@ class OpenMHT:
         mwis_ids = self.graph.mwis()
         mwis_track_trees = [self.track_trees[i] for i in mwis_ids]
 
+        self.final_mwis = mwis_ids  # TODO: Update __str__ to not rely on this
+
         return mwis_track_trees
 
     def get_detections(self):
@@ -57,7 +59,7 @@ class OpenMHT:
     def run(self):
         print(f"\tGenerating all track trees...")
         while self.detections:
-            detections = self.detections.pop()
+            detections = self.detections.pop(0)
 
             # Update the previous track trees from the detections
             updated_track_trees = []
@@ -127,7 +129,7 @@ def read_uv_csv(file_path, frame_max=100):
                 print(f'Column names are {", ".join(row)}')
                 line_count += 1
             else:
-                frame_number, u, v = [int(i) for i in row[:3]]
+                frame_number, u, v = int(row[0]), float(row[1]), float(row[2])
                 if frame_number != current_frame:
                     detection_index = len(detections)
                     if detection_index == frame_max:
@@ -137,12 +139,10 @@ def read_uv_csv(file_path, frame_max=100):
                     current_frame = frame_number
 
                 detections[detection_index].append([u, v])
-                # print(f'\t{frame_number}:\t[{u},\t{v}]')
                 line_count += 1
 
         print(f'Processed {line_count-1} detections.')
         print(f'Number of frames: {len(detections)}')
-        # print(*detections, sep="\n")
 
     return detections
 
@@ -163,7 +163,11 @@ def write_uv_csv(file_path, track_trees):
         initial_frame = track_tree.get_frame_number()
         for j in range(len(detections)):
             frame = str(initial_frame + j)
-            u, v = [str(x) for x in detections[j]]
+            if detections[j] is None:
+                u = v = 'None'
+            else:
+                u, v = [str(x) for x in detections[j]]
+
             csv_rows.append([frame, i+1, u, v])
 
     # Sort the results by frame number
@@ -229,10 +233,12 @@ def main(argv):
     # for i in range(len(truth_values)):
     #     detections[:, i] = np.random.normal(truth_values[i], 0.1, size=(frame_count, dimensionality))
     #
+    # print("Detections:\n{}".format(detections))
     # # -- End testing section --
 
     mht = OpenMHT(detections)
     track_trees = mht.run()
+    print(mht)
     write_uv_csv(output_file, track_trees)
     end = time.time()
     elapsed_seconds = end - start
