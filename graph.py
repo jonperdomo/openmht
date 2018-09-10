@@ -16,6 +16,7 @@ class Graph(object):
             graph_dict = {}
 
         self.__graph_dict = graph_dict
+        self.__edges = []
 
     def vertices(self):
         """ returns the vertices of a graph """
@@ -44,6 +45,8 @@ class Graph(object):
             self.__graph_dict[vertex1].append(vertex2)
         else:
             self.__graph_dict[vertex1] = [vertex2]
+
+        self.__edges.append(edge)
 
     def find_all_paths(self, start_vertex, end_vertex, path=[]):
         """ find all paths from start_vertex to
@@ -83,9 +86,7 @@ class Graph(object):
         adj_mat = np.zeros((max_value, max_value))  # Create the NxN matrix
 
         # Populate the adjacency matrix from the edges
-        edges = list(self.edges())
-        while edges:
-            edge = edges.pop()
+        for edge in self.edges():
             i, j = [int(vertex_id) for vertex_id in edge]  # Get the matrix indices
             adj_mat[i, j] = 1
             adj_mat[j, i] = 1
@@ -100,12 +101,12 @@ class Graph(object):
         np.fill_diagonal(adj_mat, 0)  # Format as the complete matrix
 
         # Remove the current edges
-        edges = list(self.edges())
-        while edges:
-            edge = edges.pop()
+        # for edge in self.edges():
+        for edge in self.__edges:
             i, j = [int(vertex_id) for vertex_id in edge]  # Get the matrix indices
             adj_mat[i, j] = 0
             adj_mat[j, i] = 0
+        print(f"Completed complement.")
 
         return adj_mat
 

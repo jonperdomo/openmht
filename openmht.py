@@ -238,7 +238,7 @@ def main(argv):
 
     mht = OpenMHT(detections)
     track_trees = mht.run()
-    print(mht)
+    # print(mht)
     write_uv_csv(output_file, track_trees)
     end = time.time()
     elapsed_seconds = end - start

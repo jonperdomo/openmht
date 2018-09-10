@@ -1,3 +1,6 @@
+import operator
+import random
+
 from graph import Graph
 
 
@@ -13,15 +16,19 @@ class WeightedGraph(Graph):
         """Determine the maximum weighted independent set."""
 
         # Find all maximal independent sets
+        print("\tGetting the complement...")
         complement = self.complement()
-        R = []
-        P = list(range(len(self.vertices())))
-        X = []
-        ind_sets = list(self.bron_kerbosch(R, P, X, complement))
+
+        print("\tFinding independent sets...")
+        ind_sets = []
+        self.bron_kerbosch3(complement, ind_sets)
 
         # Find the maximum weighted set
+        print("\tFinding MWIS...")
         max_weight = min(self.__weights.values())
         mwis = []
+        ind_sets_out = '\n'.join([str(s) for s in ind_sets])
+        print(f"All ind sets:\n{ind_sets_out}")
         for ind_set in ind_sets:
             set_weight = sum([self.__weights[str(i)] for i in ind_set])
             if set_weight > max_weight:
@@ -30,21 +37,57 @@ class WeightedGraph(Graph):
 
         return mwis
 
-    def bron_kerbosch(self, R, P, X, g):
-        if not any((P, X)):
-            yield R
+    def bron_kerbosch3(self, g, results):
+        """With vertex ordering."""
+        P = set(range(len(self.vertices())))
+        R, X = set(), set()
+        deg_ord = self.degeneracy_ordering(g)
 
-        for v in P[:]:
-            R_v = R + [v]
-            P_v = [v1 for v1 in P if v1 in self.N(v, g)]
-            X_v = [v1 for v1 in X if v1 in self.N(v, g)]
-            for r in self.bron_kerbosch(R_v, P_v, X_v, g):
-                yield r
-            P.remove(v)
-            X.append(v)
+        for v in deg_ord:
+            N_v = self.N(v, g)
+            self.bron_kerbosch2(R | {v}, P & N_v, X & N_v, g, results)
+
+            P = P - {v}
+            X = X | {v}
+
+    def bron_kerbosch2(self, R, P, X, g, results):
+        """With pivoting."""
+        if not any((P, X)):
+            results.append(R)
+
+        u = random.choice(tuple(P | X))
+        for v in P - self.N(u, g):
+            N_v = self.N(v, g)
+            self.bron_kerbosch(R | {v}, P & N_v, X & N_v, g, results)
+
+            P = P - {v}
+            X = X | {v}
+
+    def bron_kerbosch(self, R, P, X, g, results):
+        """Without pivoting."""
+        if not any((P, X)):
+            results.append(R)
+
+        for v in set(P):
+            N_v = self.N(v, g)
+            self.bron_kerbosch(R | {v}, P & N_v, X & N_v, g, results)
+
+            P = P - {v}
+            X = X | {v}
+
+    def degeneracy_ordering(self, g):
+        """Order such that each vertex has d or fewer neighbors that come later in the ordering."""
+        v_ordered = set()
+        degrees = list(enumerate(self.vertex_degrees(g)))
+        while degrees:
+            min_index, min_value = min(degrees, key=operator.itemgetter(1))
+            v_ordered.add(min_index)
+            degrees.remove((min_index, min_value))
+
+        return v_ordered
 
     def N(self, v, g):
-        return [i for i, n_v in enumerate(g[v]) if n_v]
+        return set([i for i, n_v in enumerate(g[v]) if n_v])
 
     def add_weighted_vertex(self, vertex, weight):
         """
