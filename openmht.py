@@ -86,6 +86,7 @@ class OpenMHT:
             self.detection_count += len(detections) + 1  # +1 for the missing detection ID
             self.frame_number += 1
 
+        print(f"\tNumber of tracks: {len(self.track_trees)}")
         print("\tGenerating the global hypothesis...")
 
         final_track_trees = self.global_hypothesis()
