@@ -7,8 +7,13 @@ import time
 import csv
 from copy import deepcopy
 
-from track_tree import TrackTree
+import logging
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
+
 from weighted_graph import WeightedGraph
+from kalman_filter import KalmanFilter
 
 
 class OpenMHT:
@@ -17,99 +22,127 @@ class OpenMHT:
     """
     def __init__(self, detections):
         self.detections = list(detections)
-        self.frame_number = 0
-        self.track_trees = []  # Track hypotheses for detections in each frame
-        self.detection_count = 0
-        self.graph = WeightedGraph()  # Graph with tracks as vertices
-        self.final_mwis = None
 
-    def global_hypothesis(self):
+    def global_hypothesis(self, track_trees, conflicting_tracks):
         """
         Generate a global hypothesis by finding the maximum weighted independent
         set of a graph with tracks as vertices, and edges between conflicting tracks.
         """
-        print(f"\t\tGenerating the track tree graph...")
-        all_trees = list(self.track_trees)
-        tree_count = len(all_trees)
-        vertex_ids = dict(zip(all_trees, [str(i) for i in range(tree_count)]))  # Generate the vertex ID's
-        while all_trees:
+        logging.info("Running MWIS on weighted track trees...\n")
+        gh_graph = WeightedGraph()
+        for tree_id, track_tree in track_trees.items():
+            gh_graph.add_weighted_vertex(str(tree_id), track_tree.get_track_score())
 
-            next_tree = all_trees.pop()
-            vertex_id = vertex_ids[next_tree]
-            motion_score = next_tree.get_motion_score()
-            self.graph.add_weighted_vertex(vertex_id, motion_score)
+        gh_graph.set_edges(conflicting_tracks)
 
-            for i in range(len(all_trees)):
-                available_tree = all_trees[i]
-                if next_tree.has_conflict(available_tree):
-                    edge_vertex_id = vertex_ids[available_tree]
-                    self.graph.add_edge({vertex_id, edge_vertex_id})
+        mwis_ids = gh_graph.mwis()
+        logging.info("Completed MWIS.\n")
 
-        print(f"\t\tCalculating the MWIS...")
-        mwis_ids = self.graph.mwis()
-        mwis_track_trees = [self.track_trees[i] for i in mwis_ids]
+        return mwis_ids
 
-        self.final_mwis = mwis_ids  # TODO: Update __str__ to not rely on this
+    def generate_track_trees(self):
+        logging.info("Generating track trees...\n")
+        track_count = 0
+        track_detections = {}
+        coordinates = []  # Coordinates for all frame detections
+        kalman_filters = {}
+        frame_index = 0
+        K = 1  # Frame look-back for track pruning
+        solution_ids = []
 
-        return mwis_track_trees
+        while self.detections:
+            coordinates.append({})
+
+            detections = self.detections.pop(0)
+            # print(f"\nAdd detections: {detections}")
+            new_tracks = []  # Tracks added from these detections
+            for index, detection in enumerate(detections):
+                detection_id = str(index)
+                coordinates[-1][detection_id] = detection
+
+                # Update existing branches
+                for track_id in kalman_filters.keys():
+
+                    # Copy and update the Kalman filter
+                    track_tree = kalman_filters[track_id]
+                    continued_branch = deepcopy(track_tree)
+                    continued_branch.update(detection)
+
+                    # Update track dictionaries
+                    continued_track_id = str(track_count)
+
+                    new_tracks.append((continued_track_id, continued_branch))
+                    track_detections[continued_track_id] = track_detections[track_id] + [detection_id]
+                    track_count += 1
+
+                # Create new branch from the detection
+                new_branch = KalmanFilter(detection)
+
+                # Update track dictionaries
+                new_track_id = str(track_count)
+                new_tracks.append((new_track_id, new_branch))
+                track_detections[new_track_id] = [''] * (frame_index) + [detection_id]
+                track_count += 1
+
+            # Update the previous filter with a dummy detection
+            for track_id in kalman_filters.keys():
+                kalman_filters[track_id].update(None)
+                track_detections[track_id].append('')
+
+            kalman_filters.update(new_tracks)
+
+            # Prune subtrees that diverge from the solution_trees at frame k-N
+            logging.info("Pruning branches...\n")
+            prune_index = max(0, frame_index-K)
+            conflicting_tracks = self.get_conflicting_tracks(track_detections)
+            solution_ids = self.global_hypothesis(kalman_filters, conflicting_tracks)
+            non_solution_ids = list(set(kalman_filters.keys()) - set(solution_ids))
+            prune_ids = set()
+            for solution_id in solution_ids:
+                d_id = track_detections[solution_id][prune_index]
+                if d_id != '':
+                    for non_solution_id in non_solution_ids:
+                        if d_id == track_detections[non_solution_id][prune_index]:
+                            prune_ids.add(non_solution_id)
+
+            for prune_id in prune_ids:
+                track_detections.pop(prune_id)
+                kalman_filters.pop(prune_id)
+
+            logging.info(f"Pruned {len(prune_ids)} branches.\n")
+            del prune_ids
+
+            frame_index += 1
+
+        logging.info("Track tree generation complete.\n")
+
+        return solution_ids, track_detections, coordinates
+
+    def get_conflicting_tracks(self, track_detections):
+        conflicting_tracks = []
+        track_ids = list(track_detections.keys())
+        while track_ids:
+            track_id = track_ids.pop()
+            d_ids = track_detections[track_id]
+            for test_track_id in track_ids:
+                test_d_ids = track_detections[test_track_id]
+                for i in range(len(d_ids)):
+                    d_id = d_ids[i]
+                    if d_id != '' and d_id == test_d_ids[i]:
+                        conflicting_tracks.append((track_id, test_track_id))
+
+        return conflicting_tracks
 
     def get_detections(self):
         return self.detections.pop()
 
     def run(self):
-        print(f"\tGenerating all track trees...")
-        while self.detections:
-            detections = self.detections.pop(0)
+        assert len(self.detections)
+        logging.info("Running MHT...\n")
+        solution_ids, track_detections, coordinates = self.generate_track_trees()
+        logging.info("Completed MHT.\n")
 
-            # Update the previous track trees from the detections
-            updated_track_trees = []
-            for track_tree in self.track_trees:
-
-                # Generate updated track trees from the detections
-                for i in range(len(detections)):
-                    detection, vertex_id = detections[i], str(self.detection_count + i)
-                    track_tree_copy = deepcopy(track_tree)
-                    track_tree_copy.add_detection(detection, vertex_id)
-                    updated_track_trees.append(track_tree_copy)
-
-                # Add a dummy observation to account for missing detections
-                track_tree.add_detection(None, str(self.detection_count + len(detections)))
-            self.track_trees.extend(updated_track_trees)
-
-            # Generate new track trees from the detections
-            for i in range(len(detections)):
-                detection, vertex_id = detections[i], str(self.detection_count + i)
-                track_tree = TrackTree(self.frame_number)
-                track_tree.add_detection(detection, vertex_id)
-                self.track_trees.append(track_tree)
-
-            self.detection_count += len(detections) + 1  # +1 for the missing detection ID
-            self.frame_number += 1
-
-        print(f"\tNumber of tracks: {len(self.track_trees)}")
-        print("\tGenerating the global hypothesis...")
-
-        final_track_trees = self.global_hypothesis()
-
-        print("\tGlobal hypothesis complete.")
-
-        return final_track_trees
-
-    def __str__(self):
-        results = "\n\n--------\nAll trees:"
-        for i in range(len(self.track_trees)):
-            results += "\nID: {}".format(i+1)
-            results += str(self.track_trees[i])
-
-        results += "\n\n--------\nResults:"
-        for track_tree_id in self.final_mwis:
-            track_tree = self.track_trees[track_tree_id]
-            results += "\nID: {}".format(track_tree_id)
-            results += str(track_tree)
-
-        results += "\nCompleted."
-
-        return results
+        return solution_ids, track_detections, coordinates
 
 
 def read_uv_csv(file_path, frame_max=100):
@@ -118,7 +151,7 @@ def read_uv_csv(file_path, frame_max=100):
     Expected column headers are:
     Frame number, U, V
     """
-    print(f"Reading CSV: {file_path} ...")
+    logging.info("Reading input CSV...\n")
     detections = []
     with open(file_path) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
@@ -127,7 +160,6 @@ def read_uv_csv(file_path, frame_max=100):
         detection_index = 0
         for row in csv_reader:
             if line_count == 0:
-                print(f'Column names are {", ".join(row)}')
                 line_count += 1
             else:
                 frame_number, u, v = int(row[0]), float(row[1]), float(row[2])
@@ -142,34 +174,31 @@ def read_uv_csv(file_path, frame_max=100):
                 detections[detection_index].append([u, v])
                 line_count += 1
 
-        print(f'Processed {line_count-1} detections.')
-        print(f'Number of frames: {len(detections)}')
+        logging.info(f'Reading inputs complete. Processed {line_count-1} detections across {len(detections)} frames.\n')
 
     return detections
 
 
-def write_uv_csv(file_path, track_trees):
+def write_uv_csv(file_path, track_ids, track_detections, coordinates):
     """
     Write track trees to a CSV.
     Column headers are:
     Frame number, track number, U, V
     """
-    print("Writing CSV: {} ...".format(file_path))
-
+    logging.info("Writing output CSV...\n")
     # Compile the results
     csv_rows = []
-    for i in range(len(track_trees)):
-        track_tree = track_trees[i]
-        detections = track_tree.get_detections()
-        initial_frame = track_tree.get_frame_number()
+    for track_index in range(len(track_ids)):
+        track_id = track_ids[track_index]
+        detections = track_detections[track_id]
         for j in range(len(detections)):
-            frame = str(initial_frame + j)
-            if detections[j] is None:
-                u = v = 'None'
+            detection_id = detections[j]
+            if detection_id:
+                point = coordinates[j][detection_id]
+                u, v = [str(x) for x in point]
             else:
-                u, v = [str(x) for x in detections[j]]
-
-            csv_rows.append([frame, i+1, u, v])
+                u = v = 'None'
+            csv_rows.append([j, track_index, u, v])
 
     # Sort the results by frame number
     csv_rows.sort(key=lambda x: x[0])
@@ -177,6 +206,8 @@ def write_uv_csv(file_path, track_trees):
         writer = csv.writer(csv_file, lineterminator='\n')
         writer.writerow(['frame', 'track', 'u', 'v'])
         writer.writerows(csv_rows)
+
+    logging.info("CSV saved to {}\n".format(file_path))
 
 
 def main(argv):
@@ -213,40 +244,20 @@ def main(argv):
         print(e)
         sys.exit(2)
 
-    print("Input file is: ", input_file)
-    print("Output file is: ", output_file)
+    logging.info(f"Input file is: {input_file}\n")
+    logging.info(f"Output file is: {output_file}\n")
 
-    # Run
-    start = time.time()
-
-    # Read input data
+    # Read a list of detections
     detections = read_uv_csv(input_file)
 
-    # # -- Testing section --
-    #
-    # import numpy as np
-    # frame_count = 2
-    # dimensionality = 2
-    #
-    # # Truth values for 3 objects
-    # truth_values = [[0, 0], [10, 10], [15, 15]]
-    # detections = np.zeros((frame_count, len(truth_values), dimensionality))
-    # for i in range(len(truth_values)):
-    #     detections[:, i] = np.random.normal(truth_values[i], 0.1, size=(frame_count, dimensionality))
-    #
-    # print("Detections:\n{}".format(detections))
-    # # -- End testing section --
-
+    # Run MHT on detections
+    start = time.time()
     mht = OpenMHT(detections)
-    track_trees = mht.run()
-    # print(mht)
-    write_uv_csv(output_file, track_trees)
+    track_ids, track_detections, coordinates = mht.run()
+    write_uv_csv(output_file, track_ids, track_detections, coordinates)
     end = time.time()
     elapsed_seconds = end - start
-    print("Elapsed time (s) {0:.2f}".format(elapsed_seconds))
-
-    elapsed_formatted = time.strftime('%H:%M:%S', time.gmtime(elapsed_seconds))
-    print(elapsed_formatted)
+    logging.info("Elapsed time (seconds) {0:.3f}\n".format(elapsed_seconds))
 
 
 if __name__ == "__main__":

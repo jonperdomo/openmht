@@ -16,26 +16,25 @@ class WeightedGraph(Graph):
         """Determine the maximum weighted independent set."""
 
         # Find all maximal independent sets
-        print("\tGetting the complement...")
         complement = self.complement()
 
-        print("\tFinding independent sets...")
+        # print("Finding independent sets...")
         ind_sets = []
         self.bron_kerbosch3(complement, ind_sets)
 
         # Find the maximum weighted set
-        print("\tFinding MWIS...")
+        # print("Finding MWIS...")
         max_weight = min(self.__weights.values())
         mwis = []
-        ind_sets_out = '\n'.join([str(s) for s in ind_sets])
-        print(f"All ind sets:\n{ind_sets_out}")
         for ind_set in ind_sets:
             set_weight = sum([self.__weights[str(i)] for i in ind_set])
             if set_weight > max_weight:
                 max_weight = set_weight
                 mwis = ind_set
 
-        return mwis
+        mwis_ids = [str(i) for i in mwis]
+
+        return mwis_ids
 
     def bron_kerbosch3(self, g, results):
         """With vertex ordering."""
@@ -54,6 +53,7 @@ class WeightedGraph(Graph):
         """With pivoting."""
         if not any((P, X)):
             results.append(R)
+            return
 
         u = random.choice(tuple(P | X))
         for v in P - self.N(u, g):
@@ -98,7 +98,7 @@ class WeightedGraph(Graph):
 
     def __str__(self):
         res = super(WeightedGraph, self).__str__()
-        res += "\nweights: "
+        res += "\nWeights: "
         for w in self.__weights.values():
             res += str(w) + " "
 

@@ -17,10 +17,11 @@ class Graph(object):
 
         self.__graph_dict = graph_dict
         self.__edges = []
+        self.__vertices = []
 
     def vertices(self):
         """ returns the vertices of a graph """
-        return list(self.__graph_dict.keys())
+        return self.__vertices
 
     def edges(self):
         """ returns the edges of a graph """
@@ -34,12 +35,12 @@ class Graph(object):
         """
         if vertex not in self.__graph_dict:
             self.__graph_dict[vertex] = []
+            self.__vertices.append(vertex)
 
     def add_edge(self, edge):
         """ assumes that edge is of type set, tuple or list;
             between two vertices can be multiple edges!
         """
-        edge = set(edge)
         (vertex1, vertex2) = tuple(edge)
         if vertex1 in self.__graph_dict:
             self.__graph_dict[vertex1].append(vertex2)
@@ -95,20 +96,22 @@ class Graph(object):
 
     def complement(self):
         """Generate the adjacency matrix for the complement graph."""
-
+        # print("Getting the complement...")
         max_value = max([int(vid) for vid in self.vertices()])+1  # Find the maximum vertex ID (+1 since 0-indexed)
         adj_mat = np.ones((max_value, max_value))  # Create the NxN matrix
         np.fill_diagonal(adj_mat, 0)  # Format as the complete matrix
 
         # Remove the current edges
-        # for edge in self.edges():
         for edge in self.__edges:
             i, j = [int(vertex_id) for vertex_id in edge]  # Get the matrix indices
             adj_mat[i, j] = 0
             adj_mat[j, i] = 0
-        print(f"Completed complement.")
+        # print(f"Complete.")
 
         return adj_mat
+
+    def set_edges(self, edges):
+        self.__edges = edges
 
     def vertex_degree(self, vertex):
         """ The degree of a vertex is the number of edges connecting
