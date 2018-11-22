@@ -5,9 +5,8 @@ _C. Kim, F. Li, A. Ciptadi and J. M. Rehg, "Multiple Hypothesis Tracking Revisit
 doi: 10.1109/ICCV.2015.533
 URL: http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7410890&isnumber=7410356_
 
-### Dependencies
+## Dependencies
  Install the latest version of [Python 3](https://www.python.org/downloads/)
 
-### Running from the command line
-
-```python C:/Users/*/openmht.py -i C:/Users/*/InputDetections.csv -o C:/Users/*/OutputDetections.csv```
+## Usage
+```$ python C:/Users/*/openmht.py -i C:/Users/*/InputDetections.csv -o C:/Users/*/OutputDetections.csv```
