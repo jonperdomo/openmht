@@ -96,7 +96,6 @@ class Graph(object):
 
     def complement(self):
         """Generate the adjacency matrix for the complement graph."""
-        # print("Getting the complement...")
         max_value = max([int(vid) for vid in self.vertices()])+1  # Find the maximum vertex ID (+1 since 0-indexed)
         adj_mat = np.ones((max_value, max_value))  # Create the NxN matrix
         np.fill_diagonal(adj_mat, 0)  # Format as the complete matrix
@@ -106,7 +105,6 @@ class Graph(object):
             i, j = [int(vertex_id) for vertex_id in edge]  # Get the matrix indices
             adj_mat[i, j] = 0
             adj_mat[j, i] = 0
-        # print(f"Complete.")
 
         return adj_mat
 
@@ -165,25 +163,3 @@ class Graph(object):
                 if {neighbour, vertex} not in edges:
                     edges.append({vertex, neighbour})
         return edges
-
-    def __str__(self):
-        res = "vertices: "
-        for k in self.__graph_dict:
-            res += str(k) + " "
-        res += "\nedges: "
-        for edge in self.__generate_edges():
-            res += str(edge) + " "
-        return res
-
-
-if __name__ == "__main__":
-    g = {"a": ["d"],
-         "b": ["c"],
-         "c": ["b", "c", "d", "e"],
-         "d": ["a", "c"],
-         "e": ["c"],
-         "f": []
-         }
-
-    graph = Graph(g)
-    print(graph)

@@ -30,8 +30,8 @@ class OpenMHT:
         """
         logging.info("Running MWIS on weighted track trees...\n")
         gh_graph = WeightedGraph()
-        for tree_id, track_tree in track_trees.items():
-            gh_graph.add_weighted_vertex(str(tree_id), track_tree.get_track_score())
+        for index, kalman_filter in enumerate(track_trees):
+            gh_graph.add_weighted_vertex(str(index), kalman_filter.get_track_score())
 
         gh_graph.set_edges(conflicting_tracks)
 
@@ -42,94 +42,82 @@ class OpenMHT:
 
     def generate_track_trees(self):
         logging.info("Generating track trees...\n")
-        track_count = 0
-        track_detections = {}
+        track_detections = []
+        kalman_filters = []
         coordinates = []  # Coordinates for all frame detections
-        kalman_filters = {}
         frame_index = 0
         K = 1  # Frame look-back for track pruning
-        solution_ids = []
+        solution_coordinates = []  # List of coordinates for each track
 
         while self.detections:
             coordinates.append({})
-
             detections = self.detections.pop(0)
-            # print(f"\nAdd detections: {detections}")
-            new_tracks = []  # Tracks added from these detections
+            track_count = len(kalman_filters)
             for index, detection in enumerate(detections):
                 detection_id = str(index)
-                coordinates[-1][detection_id] = detection
+                coordinates[frame_index][detection_id] = detection
 
                 # Update existing branches
-                for track_id in kalman_filters.keys():
-
+                for i in range(track_count):
                     # Copy and update the Kalman filter
-                    track_tree = kalman_filters[track_id]
+                    track_tree = kalman_filters[i]
                     continued_branch = deepcopy(track_tree)
                     continued_branch.update(detection)
-
-                    # Update track dictionaries
-                    continued_track_id = str(track_count)
-
-                    new_tracks.append((continued_track_id, continued_branch))
-                    track_detections[continued_track_id] = track_detections[track_id] + [detection_id]
-                    track_count += 1
+                    kalman_filters.append(continued_branch)
+                    track_detections.append(track_detections[i] + [detection_id])
 
                 # Create new branch from the detection
-                new_branch = KalmanFilter(detection)
-
-                # Update track dictionaries
-                new_track_id = str(track_count)
-                new_tracks.append((new_track_id, new_branch))
-                track_detections[new_track_id] = [''] * (frame_index) + [detection_id]
-                track_count += 1
+                kalman_filters.append(KalmanFilter(detection))
+                track_detections.append([''] * frame_index + [detection_id])
 
             # Update the previous filter with a dummy detection
-            for track_id in kalman_filters.keys():
-                kalman_filters[track_id].update(None)
-                track_detections[track_id].append('')
-
-            kalman_filters.update(new_tracks)
+            for j in range(track_count):
+                kalman_filters[j].update(None)
+                track_detections[j].append('')
 
             # Prune subtrees that diverge from the solution_trees at frame k-N
             logging.info("Pruning branches...\n")
             prune_index = max(0, frame_index-K)
             conflicting_tracks = self.get_conflicting_tracks(track_detections)
             solution_ids = self.global_hypothesis(kalman_filters, conflicting_tracks)
-            non_solution_ids = list(set(kalman_filters.keys()) - set(solution_ids))
+            non_solution_ids = list(set(range(len(kalman_filters))) - set(solution_ids))
             prune_ids = set()
+            del solution_coordinates[:]
             for solution_id in solution_ids:
+                detections = track_detections[solution_id]
+                track_coordinates = []
+                for i in range(len(detections)):
+                    if detections[i] == '':
+                        track_coordinates.append(None)
+                    else:
+                        track_coordinates.append(coordinates[i][detections[i]])
+                solution_coordinates.append(track_coordinates)
+
                 d_id = track_detections[solution_id][prune_index]
                 if d_id != '':
                     for non_solution_id in non_solution_ids:
                         if d_id == track_detections[non_solution_id][prune_index]:
                             prune_ids.add(non_solution_id)
 
-            for prune_id in prune_ids:
-                track_detections.pop(prune_id)
-                kalman_filters.pop(prune_id)
-
-            logging.info(f"Pruned {len(prune_ids)} branches.\n")
-            del prune_ids
+            for k in sorted(prune_ids, reverse=True):
+                del track_detections[k]
+                del kalman_filters[k]
 
             frame_index += 1
 
         logging.info("Track tree generation complete.\n")
 
-        return solution_ids, track_detections, coordinates
+        return solution_coordinates
 
     def get_conflicting_tracks(self, track_detections):
         conflicting_tracks = []
-        track_ids = list(track_detections.keys())
-        while track_ids:
-            track_id = track_ids.pop()
-            d_ids = track_detections[track_id]
-            for test_track_id in track_ids:
-                test_d_ids = track_detections[test_track_id]
-                for i in range(len(d_ids)):
-                    d_id = d_ids[i]
-                    if d_id != '' and d_id == test_d_ids[i]:
-                        conflicting_tracks.append((track_id, test_track_id))
+        for i in range(len(track_detections)):
+            for j in range(i + 1, len(track_detections)):
+                left_ids = track_detections[i]
+                right_ids = track_detections[j]
+                for k in range(len(left_ids)):
+                    if left_ids[k] != '' and right_ids[k] != '' and left_ids[k] == right_ids[k]:
+                        conflicting_tracks.append((i, j))
 
         return conflicting_tracks
 
@@ -139,10 +127,10 @@ class OpenMHT:
     def run(self):
         assert len(self.detections)
         logging.info("Running MHT...\n")
-        solution_ids, track_detections, coordinates = self.generate_track_trees()
+        solution_coordinates = self.generate_track_trees()
         logging.info("Completed MHT.\n")
 
-        return solution_ids, track_detections, coordinates
+        return solution_coordinates
 
 
 def read_uv_csv(file_path, frame_max=100):
@@ -179,26 +167,24 @@ def read_uv_csv(file_path, frame_max=100):
     return detections
 
 
-def write_uv_csv(file_path, track_ids, track_detections, coordinates):
+def write_uv_csv(file_path, solution_coordinates):
     """
     Write track trees to a CSV.
     Column headers are:
     Frame number, track number, U, V
     """
     logging.info("Writing output CSV...\n")
-    # Compile the results
     csv_rows = []
-    for track_index in range(len(track_ids)):
-        track_id = track_ids[track_index]
-        detections = track_detections[track_id]
-        for j in range(len(detections)):
-            detection_id = detections[j]
-            if detection_id:
-                point = coordinates[j][detection_id]
-                u, v = [str(x) for x in point]
-            else:
+    for i in range(len(solution_coordinates)):
+        track_coordinates = solution_coordinates[i]
+        for j in range(len(track_coordinates)):
+            coordinate = track_coordinates[j]
+            if coordinate is None:
                 u = v = 'None'
-            csv_rows.append([j, track_index, u, v])
+            else:
+                u, v = [str(x) for x in coordinate]
+
+            csv_rows.append([j, i, u, v])
 
     # Sort the results by frame number
     csv_rows.sort(key=lambda x: x[0])
@@ -253,8 +239,8 @@ def main(argv):
     # Run MHT on detections
     start = time.time()
     mht = OpenMHT(detections)
-    track_ids, track_detections, coordinates = mht.run()
-    write_uv_csv(output_file, track_ids, track_detections, coordinates)
+    solution_coordinates = mht.run()
+    write_uv_csv(output_file, solution_coordinates)
     end = time.time()
     elapsed_seconds = end - start
     logging.info("Elapsed time (seconds) {0:.3f}\n".format(elapsed_seconds))

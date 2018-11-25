@@ -17,13 +17,10 @@ class WeightedGraph(Graph):
 
         # Find all maximal independent sets
         complement = self.complement()
-
-        # print("Finding independent sets...")
         ind_sets = []
         self.bron_kerbosch3(complement, ind_sets)
 
         # Find the maximum weighted set
-        # print("Finding MWIS...")
         max_weight = min(self.__weights.values())
         mwis = []
         for ind_set in ind_sets:
@@ -32,9 +29,7 @@ class WeightedGraph(Graph):
                 max_weight = set_weight
                 mwis = ind_set
 
-        mwis_ids = [str(i) for i in mwis]
-
-        return mwis_ids
+        return mwis
 
     def bron_kerbosch3(self, g, results):
         """With vertex ordering."""

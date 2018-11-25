@@ -18,7 +18,7 @@ class KalmanFilter:
         self.image_area = 1000.0  # TODO: Replace with actual frame dimensions
         self.missed_detection_score = np.log(1. - (1. / self.image_area))
         self.track_score = self.missed_detection_score
-        self.d_th = 150  # Gating area
+        self.d_th = 1500  # Gating area
 
     def get_track_score(self):
         return self.track_score
