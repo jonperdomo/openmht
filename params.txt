@@ -1,0 +1,5 @@
+image_area = 307200  # Image width x height in pixels
+gating_area = 1000  # Gating area for new detections
+k = 0  # Gain or blending factor
+q = 0.00001  # Kalman filter process variance
+r = 0.01  # Estimate of measurement variance

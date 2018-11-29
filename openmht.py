@@ -20,8 +20,9 @@ class OpenMHT:
     """
     Multiple hypothesis tracking.
     """
-    def __init__(self, detections):
+    def __init__(self, detections, params):
         self.detections = list(detections)
+        self.params = params
 
     def global_hypothesis(self, track_trees, conflicting_tracks):
         """
@@ -67,7 +68,7 @@ class OpenMHT:
                     track_detections.append(track_detections[i] + [detection_id])
 
                 # Create new branch from the detection
-                kalman_filters.append(KalmanFilter(detection))
+                kalman_filters.append(KalmanFilter(detection, **self.params))
                 track_detections.append([''] * frame_index + [detection_id])
 
             # Update the previous filter with a dummy detection
@@ -196,6 +197,34 @@ def write_uv_csv(file_path, solution_coordinates):
     logging.info("CSV saved to {}\n".format(file_path))
 
 
+def read_parameters():
+    """Read in the current Kalman filter parameters."""
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    params_file_path = os.path.join(dir_path, "params.txt")
+    param_keys = ["image_area", "gating_area", "k", "q", "r"]
+    params = {}
+    with open(params_file_path) as f:
+        for line in f:
+            line_data = line.split("#")[0].split('=')
+            if len(line_data) == 2:
+                key, val = [s.strip() for s in line_data]
+                if key in param_keys:
+                    try:
+                        val = float(val)
+                    except ValueError:
+                        raise AssertionError(f"Incorrect value type in params.txt: {line}")
+
+                    param_keys.remove(key)
+                    params[key] = val
+            else:
+                raise AssertionError(f"Error in params.txt formatting: {line}")
+
+    if param_keys:
+        raise AssertionError("Parameters not found in params.txt: " + ", ".join(param_keys))
+
+    return params
+
+
 def main(argv):
     input_file = ''
     output_file = ''
@@ -230,15 +259,21 @@ def main(argv):
         print(e)
         sys.exit(2)
 
-    logging.info(f"Input file is: {input_file}\n")
-    logging.info(f"Output file is: {output_file}\n")
+    # Read MHT parameters
+    try:
+        params = read_parameters()
+        logging.info(f"Kalman filter parameters: {params}")
 
-    # Read a list of detections
-    detections = read_uv_csv(input_file)
+    except AssertionError as e:
+        print(e)
+        sys.exit(2)
 
     # Run MHT on detections
+    logging.info(f"Input file is: {input_file}\n")
+    logging.info(f"Output file is: {output_file}\n")
+    detections = read_uv_csv(input_file)
     start = time.time()
-    mht = OpenMHT(detections)
+    mht = OpenMHT(detections, params)
     solution_coordinates = mht.run()
     write_uv_csv(output_file, solution_coordinates)
     end = time.time()
