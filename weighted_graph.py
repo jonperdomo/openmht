@@ -21,7 +21,9 @@ class WeightedGraph(Graph):
         self.____bron_kerbosch3(complement, ind_sets)
 
         # Find the maximum weighted set
-        max_weight = min(self.__weights.values())
+        # NOTE: The maximum total weight of any subset of nodes in this graph cannot be less than the additive
+        # inverse of the total magnitude of all node weights, subtract 1. Use this value as the initial maximum weight.
+        max_weight = -sum(map(abs, self.__weights.values()))-1
         mwis = []
         for ind_set in ind_sets:
             set_weight = sum([self.__weights[str(i)] for i in ind_set])
