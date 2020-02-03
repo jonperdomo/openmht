@@ -135,7 +135,7 @@ class OpenMHT:
         return solution_coordinates
 
 
-def __read_uv_csv(file_path, frame_max=100):
+def read_uv_csv(file_path, frame_max=100):
     """
     Read detections from a CSV.
     Expected column headers are:
@@ -169,7 +169,7 @@ def __read_uv_csv(file_path, frame_max=100):
     return detections
 
 
-def __write_uv_csv(file_path, solution_coordinates):
+def write_uv_csv(file_path, solution_coordinates):
     """
     Write track trees to a CSV.
     Column headers are:
@@ -198,7 +198,7 @@ def __write_uv_csv(file_path, solution_coordinates):
     logging.info("CSV saved to {}\n".format(file_path))
 
 
-def __read_parameters():
+def read_parameters():
     """Read in the current Kalman filter parameters."""
     dir_path = os.path.dirname(os.path.realpath(__file__))
     params_file_path = os.path.join(dir_path, "params.txt")
@@ -262,7 +262,7 @@ def main(argv):
 
     # Read MHT parameters
     try:
-        params = __read_parameters()
+        params = read_parameters()
         logging.info(f"Kalman filter parameters: {params}")
 
     except AssertionError as e:
@@ -272,11 +272,11 @@ def main(argv):
     # run MHT on detections
     logging.info(f"Input file is: {input_file}\n")
     logging.info(f"Output file is: {output_file}\n")
-    detections = __read_uv_csv(input_file)
+    detections = read_uv_csv(input_file)
     start = time.time()
     mht = OpenMHT(detections, params)
     solution_coordinates = mht.run()
-    __write_uv_csv(output_file, solution_coordinates)
+    write_uv_csv(output_file, solution_coordinates)
     end = time.time()
     elapsed_seconds = end - start
     logging.info("Elapsed time (seconds) {0:.3f}\n".format(elapsed_seconds))
