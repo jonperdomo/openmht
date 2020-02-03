@@ -49,34 +49,6 @@ class Graph(object):
 
         self.__edges.append(edge)
 
-    def find_all_paths(self, start_vertex, end_vertex, path=[]):
-        """ find all paths from start_vertex to
-            end_vertex in graph """
-        graph = self.__graph_dict
-        path = path + [start_vertex]
-        if start_vertex == end_vertex:
-            return [path]
-        if start_vertex not in graph:
-            return []
-        paths = []
-        for vertex in graph[start_vertex]:
-            if vertex not in path:
-                extended_paths = self.find_all_paths(vertex,
-                                                     end_vertex,
-                                                     path)
-                for p in extended_paths:
-                    paths.append(p)
-        return paths
-
-    def find_isolated_nodes(self):
-        """ returns a list of isolated vertices. """
-        graph = self.__graph_dict
-        isolated = []
-        for vertex in graph:
-            if not graph[vertex]:
-                isolated += [vertex]
-        return isolated
-
     def adjacency_matrix(self):
         """
         Generate the adjacency matrix:
@@ -111,16 +83,6 @@ class Graph(object):
     def set_edges(self, edges):
         self.__edges = edges
 
-    def vertex_degree(self, vertex):
-        """ The degree of a vertex is the number of edges connecting
-            it, i.e. the number of adjacent vertices. Loops are counted
-            double, i.e. every occurence of vertex in the list
-            of adjacent vertices
-        """
-        adj_vertices = self.__graph_dict[vertex]
-        degree = len(adj_vertices) + adj_vertices.count(vertex)
-        return degree
-
     def vertex_degrees(self, adj_mat):
         """ The degree of a vertex is the number of edges connecting
             it, i.e. the number of adjacent vertices. Loops are counted
@@ -129,27 +91,6 @@ class Graph(object):
         """
         degrees = adj_mat.sum(axis=1)
         return degrees
-
-    def vertex_support(self, vertex):
-        """ The support of a vertex is defined by the
-            sum of the degree of the vertices which are
-            adjacent to it
-        """
-        adj_vertices = self.__graph_dict[vertex]
-        support = sum([self.vertex_degree(vid) for vid in adj_vertices])
-        return support
-
-    def vertex_supports(self, adj_mat, degrees):
-        """ The support of a vertex is defined by the
-            sum of the degree of the vertices which are
-            adjacent to it
-        """
-        supports = np.zeros(degrees.shape)
-        edges = np.transpose(np.nonzero(adj_mat))
-        for edge in edges:
-            supports[edge[0]] += degrees[edge[1]]
-
-        return supports
 
     def __generate_edges(self):
         """ A static method generating the edges of the
