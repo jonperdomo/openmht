@@ -1,5 +1,11 @@
+#!/usr/bin/env python
+"""Kalman Filter"""
+
 import numpy as np
-# from scipy.stats import multivariate_normal
+
+__author__ = "Jon Perdomo"
+__license__ = "GPL-3.0"
+__version__ = "0.1.0"
 
 
 class KalmanFilter:

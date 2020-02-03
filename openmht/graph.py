@@ -1,10 +1,11 @@
-""" A Python Class
-A simple Python graph class, demonstrating the essential
-facts and functionalities of graphs.
-https://www.python-course.eu/graphs_python.php
-"""
+#!/usr/bin/env python
+"""Graph"""
+
 import numpy as np
 
+__author__ = "Jon Perdomo"
+__license__ = "GPL-3.0"
+__version__ = "0.1.0"
 
 class Graph(object):
     def __init__(self, graph_dict=None):

@@ -1,7 +1,14 @@
+#!/usr/bin/env python
+"""Weighted Graph"""
+
 import operator
 import random
 
-from graph import Graph
+from .graph import Graph
+
+__author__ = "Jon Perdomo"
+__license__ = "GPL-3.0"
+__version__ = "0.1.0"
 
 
 class WeightedGraph(Graph):
