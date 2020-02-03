@@ -21,15 +21,15 @@ class OpenMHT:
     Multiple hypothesis tracking.
     """
     def __init__(self, detections, params):
-        self.detections = list(detections)
-        self.params = params
+        self.__detections = list(detections)
+        self.__params = params
 
-    def global_hypothesis(self, track_trees, conflicting_tracks):
+    def __global_hypothesis(self, track_trees, conflicting_tracks):
         """
         Generate a global hypothesis by finding the maximum weighted independent
         set of a graph with tracks as vertices, and edges between conflicting tracks.
         """
-        logging.info("Running MWIS on weighted track trees...\n")
+        logging.info("running MWIS on weighted track trees...\n")
         gh_graph = WeightedGraph()
         for index, kalman_filter in enumerate(track_trees):
             gh_graph.add_weighted_vertex(str(index), kalman_filter.get_track_score())
@@ -41,18 +41,19 @@ class OpenMHT:
 
         return mwis_ids
 
-    def generate_track_trees(self):
+    def __generate_track_trees(self):
         logging.info("Generating track trees...\n")
         track_detections = []
         kalman_filters = []
         coordinates = []  # Coordinates for all frame detections
         frame_index = 0
-        K = 1  # Frame look-back for track pruning
+        # K = 1  # Frame look-back for track pruning
+        n_scan = int(self.__params.pop('n'))  # Frame look-back for track pruning
         solution_coordinates = []  # List of coordinates for each track
 
-        while self.detections:
+        while self.__detections:
             coordinates.append({})
-            detections = self.detections.pop(0)
+            detections = self.__detections.pop(0)
             track_count = len(kalman_filters)
             for index, detection in enumerate(detections):
                 detection_id = str(index)
@@ -63,24 +64,24 @@ class OpenMHT:
                     # Copy and update the Kalman filter
                     track_tree = kalman_filters[i]
                     continued_branch = deepcopy(track_tree)
-                    continued_branch.update(detection)
+                    continued_branch._update(detection)
                     kalman_filters.append(continued_branch)
                     track_detections.append(track_detections[i] + [detection_id])
 
                 # Create new branch from the detection
-                kalman_filters.append(KalmanFilter(detection, **self.params))
+                kalman_filters.append(KalmanFilter(detection, **self.__params))
                 track_detections.append([''] * frame_index + [detection_id])
 
             # Update the previous filter with a dummy detection
             for j in range(track_count):
-                kalman_filters[j].update(None)
+                kalman_filters[j]._update(None)
                 track_detections[j].append('')
 
             # Prune subtrees that diverge from the solution_trees at frame k-N
             logging.info("Pruning branches...\n")
-            prune_index = max(0, frame_index-K)
-            conflicting_tracks = self.get_conflicting_tracks(track_detections)
-            solution_ids = self.global_hypothesis(kalman_filters, conflicting_tracks)
+            prune_index = max(0, frame_index-n_scan)
+            conflicting_tracks = self.__get_conflicting_tracks(track_detections)
+            solution_ids = self.__global_hypothesis(kalman_filters, conflicting_tracks)
             non_solution_ids = list(set(range(len(kalman_filters))) - set(solution_ids))
             prune_ids = set()
             del solution_coordinates[:]
@@ -110,7 +111,7 @@ class OpenMHT:
 
         return solution_coordinates
 
-    def get_conflicting_tracks(self, track_detections):
+    def __get_conflicting_tracks(self, track_detections):
         conflicting_tracks = []
         for i in range(len(track_detections)):
             for j in range(i + 1, len(track_detections)):
@@ -122,19 +123,19 @@ class OpenMHT:
 
         return conflicting_tracks
 
-    def get_detections(self):
-        return self.detections.pop()
+    def __get_detections(self):
+        return self.__detections.pop()
 
     def run(self):
-        assert len(self.detections)
+        assert len(self.__detections)
         logging.info("Running MHT...\n")
-        solution_coordinates = self.generate_track_trees()
+        solution_coordinates = self.__generate_track_trees()
         logging.info("Completed MHT.\n")
 
         return solution_coordinates
 
 
-def read_uv_csv(file_path, frame_max=100):
+def __read_uv_csv(file_path, frame_max=100):
     """
     Read detections from a CSV.
     Expected column headers are:
@@ -168,7 +169,7 @@ def read_uv_csv(file_path, frame_max=100):
     return detections
 
 
-def write_uv_csv(file_path, solution_coordinates):
+def __write_uv_csv(file_path, solution_coordinates):
     """
     Write track trees to a CSV.
     Column headers are:
@@ -197,11 +198,11 @@ def write_uv_csv(file_path, solution_coordinates):
     logging.info("CSV saved to {}\n".format(file_path))
 
 
-def read_parameters():
+def __read_parameters():
     """Read in the current Kalman filter parameters."""
     dir_path = os.path.dirname(os.path.realpath(__file__))
     params_file_path = os.path.join(dir_path, "params.txt")
-    param_keys = ["image_area", "gating_area", "k", "q", "r"]
+    param_keys = ["image_area", "gating_area", "k", "q", "r", "n"]
     params = {}
     with open(params_file_path) as f:
         for line in f:
@@ -261,21 +262,21 @@ def main(argv):
 
     # Read MHT parameters
     try:
-        params = read_parameters()
+        params = __read_parameters()
         logging.info(f"Kalman filter parameters: {params}")
 
     except AssertionError as e:
         print(e)
         sys.exit(2)
 
-    # Run MHT on detections
+    # run MHT on detections
     logging.info(f"Input file is: {input_file}\n")
     logging.info(f"Output file is: {output_file}\n")
-    detections = read_uv_csv(input_file)
+    detections = __read_uv_csv(input_file)
     start = time.time()
     mht = OpenMHT(detections, params)
     solution_coordinates = mht.run()
-    write_uv_csv(output_file, solution_coordinates)
+    __write_uv_csv(output_file, solution_coordinates)
     end = time.time()
     elapsed_seconds = end - start
     logging.info("Elapsed time (seconds) {0:.3f}\n".format(elapsed_seconds))

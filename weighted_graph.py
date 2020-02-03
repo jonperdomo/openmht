@@ -18,7 +18,7 @@ class WeightedGraph(Graph):
         # Find all maximal independent sets
         complement = self.complement()
         ind_sets = []
-        self.bron_kerbosch3(complement, ind_sets)
+        self.____bron_kerbosch3(complement, ind_sets)
 
         # Find the maximum weighted set
         max_weight = min(self.__weights.values())
@@ -31,46 +31,46 @@ class WeightedGraph(Graph):
 
         return mwis
 
-    def bron_kerbosch3(self, g, results):
+    def ____bron_kerbosch3(self, g, results):
         """With vertex ordering."""
         P = set(range(len(self.vertices())))
         R, X = set(), set()
-        deg_ord = self.degeneracy_ordering(g)
+        deg_ord = self.__degeneracy_ordering(g)
 
         for v in deg_ord:
-            N_v = self.N(v, g)
-            self.bron_kerbosch2(R | {v}, P & N_v, X & N_v, g, results)
+            N_v = self.__n(v, g)
+            self.____bron_kerbosch2(R | {v}, P & N_v, X & N_v, g, results)
 
             P = P - {v}
             X = X | {v}
 
-    def bron_kerbosch2(self, R, P, X, g, results):
+    def ____bron_kerbosch2(self, R, P, X, g, results):
         """With pivoting."""
         if not any((P, X)):
             results.append(R)
             return
 
         u = random.choice(tuple(P | X))
-        for v in P - self.N(u, g):
-            N_v = self.N(v, g)
-            self.bron_kerbosch(R | {v}, P & N_v, X & N_v, g, results)
+        for v in P - self.__n(u, g):
+            N_v = self.__n(v, g)
+            self.__bron_kerbosch(R | {v}, P & N_v, X & N_v, g, results)
 
             P = P - {v}
             X = X | {v}
 
-    def bron_kerbosch(self, R, P, X, g, results):
+    def __bron_kerbosch(self, R, P, X, g, results):
         """Without pivoting."""
         if not any((P, X)):
             results.append(R)
 
         for v in set(P):
-            N_v = self.N(v, g)
-            self.bron_kerbosch(R | {v}, P & N_v, X & N_v, g, results)
+            N_v = self.__n(v, g)
+            self.__bron_kerbosch(R | {v}, P & N_v, X & N_v, g, results)
 
             P = P - {v}
             X = X | {v}
 
-    def degeneracy_ordering(self, g):
+    def __degeneracy_ordering(self, g):
         """Order such that each vertex has d or fewer neighbors that come later in the ordering."""
         v_ordered = set()
         degrees = list(enumerate(self.vertex_degrees(g)))
@@ -81,7 +81,7 @@ class WeightedGraph(Graph):
 
         return v_ordered
 
-    def N(self, v, g):
+    def __n(self, v, g):
         return set([i for i, n_v in enumerate(g[v]) if n_v])
 
     def add_weighted_vertex(self, vertex, weight):
