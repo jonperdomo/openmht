@@ -9,38 +9,122 @@ URL: http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7410890&isnumber=74
  Install the latest version of [Python 3](https://www.python.org/downloads/)
 
 ## Usage
-Format the input CSV file using the following example: 
+Format the input CSV columns with frame number and pixel positions using the examples under *SampleData/* as a reference.
+The U,V values corresponds to the pixel position of an object/detection in that frame. A value of *None* in the output CSV indicates a missing/unmatched detection. The *Track* column indicates the resulting track ID for a detection.
+
+### Examples
+<table>
+<tr><th>Input 1</th><th>Output 1</th></tr>
+<tr><td>
 
 | Frame | U | V |
-| ------------- | ------------- | ------------- |
-| 0  | 9.97  | 10  |
-| 0  | 15.2  | 14.9  |
-| 1  | 9.9  | 10.1  |
-| 1  | 15  | 14.89  |
+|--|--|--|
+|0| -0.0411|0.208 |
+|0| 9.97|10 |
+|0| 15.2|14.9 |
+|0| 14|13 |
+|1| -0.0099|0.00141 |
+|1| 9.9|10.1 |
+|1| 15.1|14.9 |
 
-Example output:
+</td><td>
 
-| Frame | Track | U | V |
-| ------------- | ------------- | ------------- | ------------- |
-| 0  | 0  |  9.97  | 10  |
-| 0  | 1  |  15.2  | 14.9  |
-| 1  | 0  |  9.9  | 10.1  |
-| 1  | 1  |  15  | 14.89  |
+|Frame|Track|U|V| 
+|--|--|--|--|
+|0|0|15.2|14.9
+|0|1|9.97|10
+|0|2|14|13
+|0|3|-0.0411|0.208
+|1|0|15.1|14.9
+|1|1|9.9|10.1
+|1|2|None|None
+|1|3|-0.0099|0.00141
+
+</td></tr> </table>
+
+<table>
+<tr><th>Input 2</th><th>Output 2</th></tr>
+<tr><td>
+
+| Frame | U | V |
+|--|--|--|
+|0|-0.0411|0.208|
+|0|9.97|10|
+|0|15.2|14.9|
+|1|14|13|
+|1|-0.0099|0.00141|
+|1|9.9|10.1|
+|1|15.1|14.9|
+
+</td><td>
+
+|Frame|Track|U|V| 
+|--|--|--|--|
+|0|0|15.2|14.9
+|0|1|9.97|10.0
+|0|2|None|None
+|0|3|-0.0411|0.208
+|1|0|15.1|14.9
+|1|1|9.9|10.1
+|1|2|14.0|13.0
+|1|3|-0.0099|0.00141
+
+</td></tr> </table>
+
+
+<table>
+<tr><th>Input 3</th><th>Output 3</th></tr>
+<tr><td>
+
+| Frame | U | V |
+|--|--|--|
+0|-0.0411|0.208
+0|9.97|10
+0|15.2|14.9
+1|14|13
+1|-0.0099|0.00141
+1|9.9|10.1
+1|15.1|14.9
+2|14.1|13
+2|-0.009|0.00141
+2|10|10.099
+2|15|14.89
+
+</td><td>
+
+|Frame|Track|U|V| 
+|--|--|--|--|
+0|0|-0.0411|0.208
+0|1|9.97|10.0
+0|2|15.2|14.9
+0|3|None|None
+1|0|-0.0099|0.00141
+1|1|9.9|10.1
+1|2|15.1|14.9
+1|3|14.0|13.0
+2|0|-0.009|0.00141
+2|1|10.0|10.099
+2|2|15.0|14.89
+2|3|14.1|13.0
+
+</td></tr> </table>
 
 Running OpenMHT in the command line:
 
-```$ python C:/Users/*/openmht.py -i C:/Users/*/InputDetections.csv -o C:/Users/*/OutputDetections.csv```
+```$ python /Path/To/openmht.py -i /Path/To/InputDetections.csv -o /Path/To/OutputDetections.csv```
 
 
 ## Parameters
-Modify the Kalman filter parameters by editing the file **params.txt**:
+Modify the Kalman filter parameters by editing the file *params.txt*:
 
-_image_area_: Image / frame area in pixels (Default: 307200)
+**image_area**: Image / frame area in pixels (Default: 307200)
 
-_gating_area_:  Gating area for new detections (Default: 1000)
+**gating_area**:  Gating area for new detections (Default: 1000)
 
-_k_: Gain or blending factor (Default: 0)
+**k**: Gain or blending factor (Default: 0)
 
-_q_:  Kalman filter process variance (Default: 0.00001)
+**q**:  Kalman filter process variance (Default: 0.00001)
 
-_r_: Estimate of measurement variance (Default: 0.01)
+**r**: Estimate of measurement variance (Default: 0.01)
+
+**n**: N-scan branch pruning parameter
