@@ -5,6 +5,8 @@ _C. Kim, F. Li, A. Ciptadi and J. M. Rehg, "Multiple Hypothesis Tracking Revisit
 doi: 10.1109/ICCV.2015.533
 URL: http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7410890&isnumber=7410356_
 
+Note: This implementation utilizes motion scoring only (no appearance scoring)
+
 ### Dependencies
  Install the latest version of [Python 3](https://www.python.org/downloads/)
  
@@ -19,7 +21,7 @@ The U,V values represent the 2D positions of objects/detections in that frame. A
 ### Parameters
 Modify parameters by editing the file *params.txt*:
 
-**image_area**: Image / frame area in pixels (Default: 307200)
+**image_area**: The image (frame) area in pixels (Default: 307200)
 
 **gating_area**:  Gating area for new detections (Default: 1000)
 
