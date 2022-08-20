@@ -19,11 +19,15 @@ __license__ = "GPL-3.0"
 __version__ = "0.1.0"
 
 
-def read_uv_csv(file_path, frame_max=100):
+def read_uv_csv(file_path):
     """
     Read detections from a CSV.
     Expected column headers are:
     Frame number, U, V
+    Where U,V is the location of a single detection at that frame.
+    :return
+        Nested array where the first dimension is the frame number, and the second dimension is a 2D list of each detection for that frame (U,V). Thus, detections can be accessed by frame number.
+
     """
     logging.info("Reading input CSV...")
     detections = []
@@ -32,21 +36,18 @@ def read_uv_csv(file_path, frame_max=100):
         line_count = 0
         current_frame = None
         detection_index = 0
+
+        # Loop through each row
+        next(csv_reader)  # Skip the header
         for row in csv_reader:
-            if line_count == 0:
-                line_count += 1
-            else:
-                frame_number, u, v = int(row[0]), float(row[1]), float(row[2])
-                if frame_number != current_frame:
-                    detection_index = len(detections)
-                    if detection_index == frame_max:
-                        break
+            frame_number, u, v = int(row[0]), float(row[1]), float(row[2])
+            if frame_number != current_frame:
+                detection_index = len(detections)
+                detections.append([])
+                current_frame = frame_number
 
-                    detections.append([])
-                    current_frame = frame_number
-
-                detections[detection_index].append([u, v])
-                line_count += 1
+            detections[detection_index].append([u, v])
+            line_count += 1
 
         logging.info(f'Reading inputs complete. Processed {line_count-1} detections across {len(detections)} frames.')
 
@@ -82,43 +83,56 @@ def write_uv_csv(file_path, solution_coordinates):
     logging.info("CSV saved to {}".format(file_path))
 
 
-def read_parameters(params_file_path):
-    """Read in the current Kalman filter parameters."""
-    param_keys = ["image_area", "gating_area", "k", "q", "r", "n"]
-    params = {}
-    with open(params_file_path) as f:
-        for line in f:
-            line_data = line.split("#")[0].split('=')
-            if len(line_data) == 2:
-                key, val = [s.strip() for s in line_data]
-                if key in param_keys:
-                    try:
-                        val = float(val)
-                    except ValueError:
-                        raise AssertionError(f"Incorrect value type in params.txt: {line}")
-
-                    param_keys.remove(key)
-                    params[key] = val
-            else:
-                raise AssertionError(f"Error in params.txt formatting: {line}")
-
-    if param_keys:
-        raise AssertionError("Parameters not found in params.txt: " + ", ".join(param_keys))
-
-    return params
-
-
-def read_cli_parameters():
+def create_parser():
+    """
+    Set up the default OpenMHT parameters.
+    """
     parser = argparse.ArgumentParser()
-    parser.add_argument('ifile', help="Input CSV file path")
-    parser.add_argument('ofile', help="Output CSV file path")
-    parser.add_argument('pfile', help='Path to the parameter text file')
-    args = parser.parse_args()
 
-    # Parse arguments
-    input_file = args.ifile
-    output_file = args.ofile
-    param_file = args.pfile
+    # I/O parameters
+    parser.add_argument('-i', '--input', help="Input CSV file path")
+    parser.add_argument('-o', '--output', help="Output CSV file path")
+
+    # Add OpenMHT module parameters
+    # v = 307200  # Image width x height in pixels
+    parser.add_argument('-v',  type=int, default=307200, help='Image width x height in pixels')
+
+    # dth = 1000  # Gating area for new detections
+    parser.add_argument('-dth', type=int, default=1000, help='Gating area for new detections')
+
+    # k = 0  # Gain or blending factor
+    parser.add_argument('-k', type=float, default=0, help='Gain or blending factor')
+
+    # q = 0.00001  # Kalman filter process variance
+    parser.add_argument('-q', type=float, default=0.00001, help='Image width x height in pixels')
+
+    # r = 0.01  # Estimate of measurement variance
+    parser.add_argument('-r', type=float, default=0.01, help='Image width x height in pixels')
+
+    # n = 5  # N-scan pruning parameter
+    parser.add_argument('-n', type=int, default=5, help='N-scan pruning parameter')
+
+    # bth = 100  # Maximum number of track tree branches
+    parser.add_argument('-bth', type=int, default=100, help='Maximum number of track tree branches')
+
+    # nmiss = 15  # Maximum number of false observations in tracks
+    parser.add_argument('-nmiss', type=int, default=15, help='Maximum number of false observations in tracks')
+
+    return parser
+
+
+def run():
+    """
+    Read user arguments and run OpenMHT.
+    """
+
+    # Set up the argument parser
+    parser = create_parser()
+
+    # Read user input
+    params = parser.parse_args()
+    input_file = params.ifile
+    output_file = params.ofile
 
     # Verify CSV file formats
     try:
@@ -134,16 +148,6 @@ def read_cli_parameters():
 
     logging.info(f"Input file is: {input_file}")
     logging.info(f"Output file is: {output_file}")
-    logging.info(f"Parameter file is: {param_file}")
-
-    # Read MHT parameters
-    try:
-        params = read_parameters(param_file)
-        logging.info(f"MHT parameters: {params}")
-
-    except AssertionError as e:
-        print(e)
-        sys.exit(2)
 
     # run MHT on detections
     detections = read_uv_csv(input_file)

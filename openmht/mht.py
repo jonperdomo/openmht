@@ -45,11 +45,20 @@ class MHT:
         logging.info("Generating track trees...")
         track_detections = []
         kalman_filters = []
-        coordinates = []  # Coordinates for all frame detections
+        coordinates = []  # Coordinates for all frame detections (TODO: Is this used?)
         frame_index = 0
-        n_scan = int(self.__params.pop('n'))  # Frame look-back for track pruning
+        n_scan = self.__params.n  # Frame look-back for track pruning
+        b_th = self.__params.bth  # Max. number of track tree branches
         solution_coordinates = []  # List of coordinates for each track
 
+        # Kalman filter parameters
+        v = self.__params.v
+        dth = self.__params.dth
+        k = self.__params.k
+        q = self.__params.q
+        r = self.__params.r
+
+        # Generate trees
         while self.__detections:
             coordinates.append({})
             detections = self.__detections.pop(0)
@@ -69,7 +78,7 @@ class MHT:
                     track_detections.append(track_detections[i] + [detection_id])
 
                 # Create new branch from the detection
-                kalman_filters.append(KalmanFilter(detection, **self.__params))
+                kalman_filters.append(KalmanFilter(detection, v, dth, k, q, r))
                 track_detections.append([''] * frame_index + [detection_id])
 
             # Update the previous filter with a dummy detection
@@ -77,7 +86,7 @@ class MHT:
                 kalman_filters[j]._update(None)
                 track_detections[j].append('')
 
-            # Prune subtrees that diverge from the solution_trees at frame k-N
+            # Prune subtrees that diverge from the solution trees at frame k-N
             prune_index = max(0, frame_index-n_scan)
             conflicting_tracks = self.__get_conflicting_tracks(track_detections)
             solution_ids = self.__global_hypothesis(kalman_filters, conflicting_tracks)
@@ -106,6 +115,25 @@ class MHT:
 
             logging.info("Pruned {} branch(es) at frame N-{}".format(len(prune_ids), n_scan))
 
+            # Prune low-score branches for track trees that have grown too large
+            solution_ids = range(len(kalman_filters))
+            for solution_id in solution_ids:
+                detections = track_detections[solution_id]
+                track_coordinates = []
+                for i in range(len(detections)):
+                    if detections[i] == '':
+                        track_coordinates.append(None)
+                    else:
+                        track_coordinates.append(coordinates[i][detections[i]])
+                solution_coordinates.append(track_coordinates)
+
+                d_id = track_detections[solution_id][prune_index]
+                if d_id != '':
+                    for non_solution_id in non_solution_ids:
+                        if d_id == track_detections[non_solution_id][prune_index]:
+                            prune_ids.add(non_solution_id)
+
+            # Iterate the frame index
             frame_index += 1
 
         logging.info("Generated {} track trees.".format(len(kalman_filters)))

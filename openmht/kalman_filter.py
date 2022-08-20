@@ -12,7 +12,7 @@ class KalmanFilter:
     """
     Kalman filter for 2D & 3D vectors.
     """
-    def __init__(self, initial_observation, image_area=307200, gating_area=1000, k=0, q=1e-5, r=0.01):
+    def __init__(self, initial_observation, v=307200, dth=1000, k=0, q=1e-5, r=0.01):
         self.__dims = len(initial_observation)
         x = np.matrix(initial_observation).reshape((self.__dims, 1))
         self.__Q = np.matrix(np.eye(self.__dims)) * q
@@ -21,10 +21,10 @@ class KalmanFilter:
         self.__K = k  # gain or blending factor
         self.__R = r  # estimate of measurement variance, change to see effect
 
-        self.__image_area = image_area
+        self.__image_area = v
         self.__missed_detection_score = np.log(1. - (1. / self.__image_area))
         self.__track_score = self.__missed_detection_score
-        self.__d_th = gating_area
+        self.__d_th = dth
 
     def get_track_score(self):
         return self.__track_score

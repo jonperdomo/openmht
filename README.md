@@ -21,14 +21,26 @@ The U,V values represent the 2D positions of objects/detections in that frame. A
 ### Parameters
 Modify parameters by editing the **params.txt** input file:
 
-| **Parameter** | **Description** |
-| --- | --- |
-| image_area | The image (frame) area in pixels (Default: 307200) |
-| gating_area | Gating area for new detections (Default: 1000) |
-| k | Gain or blending factor (Default: 0) |
-| q |  Kalman filter process variance (Default: 0.00001) |
-| r | Estimate of measurement variance (Default: 0.01) |
-| n | N-scan branch pruning parameter |
+| Parameter | Description                                                                                                                                                     |
+|-----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| v         | The image (frame) area in pixels (Default: 307200). The likelihood under the null hypothesis for an observation becomes the probability of detection (PD) 1/**V**.  |
+| dth       | Gating area for new detections implemented as the threshold for the Mahalinobis distance d<sup>2</sup> between the observation and prediction (Default=1000).   |
+
+Kalman filter parameters:
+
+| Parameter | Description                                                                                                                            |
+|-----------|----------------------------------------------------------------------------------------------------------------------------------------|
+| k         | Gain or blending factor. Higher gain results in a greater influence of the measurement relative to the filter's prediction (Default=0) |
+| q         | Initial estimate of the process noise covariance (Default=0.00001)                                                                     |
+| r         | Initial estimate of the measurement noise covariance (Default=0.01)                                                                    |
+
+Track tree pruning parameters:
+
+| Parameter | Description                                                                                                                                                                       |
+|-----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| n         | Go back **N** frames and prune branches that diverge from the solution. Larger N yields a more accurate solution due to a larger window, but will take a longer time (Default=1). |
+| bth       | If the number of branches exceeds the number **Bth**, then prune the track tree to only retain the top **Bth** branches.                                                          |
+| nmiss     | A track hypothesis is deleted if it reaches **Nmiss** consecutive frames of missing observations, which are due to occlusion or a false negative.                                 |
 
 ### Running:
 OpenMHT takes 3 parameters: The input CSV, output CSV, and parameter file paths.
