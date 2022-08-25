@@ -11,7 +11,8 @@ import numpy as np
 
 def test_2d():
     # === Set up the 2d input array ===
-    frame_count = 50
+    # frame_count = 50
+    frame_count = 10
 
     # First detection
     x = np.linspace(1, 100, num=frame_count)

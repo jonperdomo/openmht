@@ -16,15 +16,20 @@ class WeightedGraph(Graph):
 
     def __init__(self, graph_dict=None):
         Graph.__init__(self, graph_dict)
-        self.__weights = {}
+        self.__weights = {}  # Dictionary of weights for each vertex
+        self.__adjacency_matrix = []
 
-    def mwis(self):
-        """Determine the maximum weighted independent set."""
+    def set_adjacency_matrix(self, conflict_matrix):
+        """Set the adjacency matrix of edges for each non-conflicting track."""
+        self.__adjacency_matrix = conflict_matrix
 
-        # Find all maximal independent sets
-        complement = self.complement()
+    def run(self):
+        """Determine the maximum weighted clique."""
+
+        # Find all maximal cliques
+        adjacency_matrix = self.__adjacency_matrix
         ind_sets = []
-        self.____bron_kerbosch3(complement, ind_sets)
+        self.____bron_kerbosch3(adjacency_matrix, ind_sets)
 
         # Find the maximum weighted set
         # NOTE: The maximum total weight of any subset of nodes in this graph
