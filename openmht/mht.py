@@ -52,6 +52,7 @@ class MHT:
         frame_index = 0
         n_scan = self.__params.n  # Frame look-back for track pruning
         b_th = self.__params.bth  # Max. number of track tree branches
+        nmiss = self.__params.nmiss  # Max. number of false observations in tracks
         solution_coordinates = []  # List of coordinates for each track
 
         # Kalman filter parameters
@@ -82,7 +83,7 @@ class MHT:
             frame_index += 1
             detections = self.__detections.pop(0)
             logging.info("Frame {}: {} detections".format(frame_index, len(detections)))
-            updated_parent_nodes = []
+            updated_parent_nodes = []  # Contains all tree nodes created for this detection
 
             # Add a dummy branch for missing detections at this frame
             for previous_parent_node in parent_nodes:
@@ -100,13 +101,19 @@ class MHT:
                 conflict_id += 1
 
                 # Add branches to all previous trees
-                for previous_parent_node in parent_nodes:
-                    # Create a branch from the detection
-                    child_node = TrackNode(frame_index, detection, conflict_id=conflict_id, parent=previous_parent_node)
-                    previous_parent_node.add_child(child_node)
+                for parent_node_index in range(len(parent_nodes)):
+                    # Check that the parent node's missing detections do not exceed Nmiss
+                    previous_parent_node = parent_nodes[parent_node_index]
+                    missed_detection_count = previous_parent_node.get_filter().get_missed_detection_count()
+                    if missed_detection_count < nmiss:
+                        # Create a node from the detection using this parent
+                        child_node = TrackNode(frame_index, detection, conflict_id=conflict_id, parent=previous_parent_node)
 
-                    # Update for the next loop
-                    updated_parent_nodes.append(child_node)
+                        # Branch from the parent node
+                        previous_parent_node.add_child(child_node)
+
+                        # Update for the next loop
+                        updated_parent_nodes.append(child_node)
 
                 # Create a new tree for this detection
                 new_root_node = TrackNode(frame_index, detection, conflict_id=conflict_id, filter_params=filter_params, parent=None)
@@ -117,6 +124,10 @@ class MHT:
             # Update the parent nodes
             parent_nodes = updated_parent_nodes
 
+            # Nmiss: When adding, check if None or outside gating area.
+            # Return false if Nmiss is passed. Don't add node to parent as branch.
+            # TODO: Bth: Sort branches by score, keep the top bth branches
+
             # TODO: Plot results
 
             # # Compute the solution
@@ -125,6 +136,8 @@ class MHT:
             #
             #     # Remove the non-solution tracks
             #     track_filters = track_filters[solution_ids]
+
+            # TODO: N-pruning: Get the solution node at k-N frames, remove the other children for its parent
 
         logging.info("Generated {} track trees.".format(len(track_filters)))
         logging.info("MHT complete.")

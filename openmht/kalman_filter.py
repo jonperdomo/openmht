@@ -27,12 +27,21 @@ class TrackFilter:
         self.__track_score = self.__missed_detection_score
         self.__d_th = filter_params['dth']
 
+        # Number of missed detections
+        if initial_observation is None:
+            self.__missed_detection_count = 1
+        else:
+            self.__missed_detection_count = 0
+
         # List of detection frame number and coordinate data
         frame_key = self.__format_frame_key(initial_frame)
         self.__frame_detection_data = {frame_key: [initial_observation]}
 
     def get_track_score(self):
         return self.__track_score
+
+    def get_missed_detection_count(self):
+        return self.__missed_detection_count
 
     def add_detection(self, frame_index, z):
         # # Update the frame detection data for this filter
@@ -46,6 +55,7 @@ class TrackFilter:
 
         # Update the track's motion score via the Kalman Filter
         if z is None:
+            self.__missed_detection_count += 1
             self.__track_score += self.__missed_detection_score
 
         else:
@@ -55,7 +65,7 @@ class TrackFilter:
             sigma = self.__P + self.__Q
             d_squared = self.__mahalanobis_distance(x, mu, sigma)
 
-            # Gating
+            # Update with the detection if within the gating area
             if d_squared <= self.__d_th:
                 self.__track_score += self.__motion_score(sigma, d_squared)
 
@@ -65,6 +75,10 @@ class TrackFilter:
 
                 I = np.matrix(np.eye(self.__dims))  # identity matrix
                 self.__P = (I - self.__K) * sigma
+            else:
+                # If the detection is outside the gating area, treat as a missing detection
+                self.__missed_detection_count += 1
+                self.__track_score += self.__missed_detection_score
 
     def __format_frame_key(self, frame_number):
         frame_key = 'F' + str(frame_number)

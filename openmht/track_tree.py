@@ -17,11 +17,16 @@ class TrackNode:
             self.filter = parent.filter
             self.filter.add_detection(frame_index, detection)
 
-        self.missing_detection_count = 0
         self.children = []
 
     def add_child(self, child_node):
+        """
+        Create a branch from a child node.
+        """
         self.children.append(child_node)
+
+    def get_filter(self):
+        return self.filter
 
 ###########
 
