@@ -27,7 +27,7 @@ class TrackFilter:
         self.__track_score = self.__missed_detection_score
         self.__d_th = filter_params['dth']
 
-        # Number of missed detections
+        # Number of consecutive missed detections
         if initial_observation is None:
             self.__missed_detection_count = 1
         else:
@@ -75,6 +75,9 @@ class TrackFilter:
 
                 I = np.matrix(np.eye(self.__dims))  # identity matrix
                 self.__P = (I - self.__K) * sigma
+
+                # Reset the Nmiss count since it is only for consecutively missed detections
+                self.__missed_detection_count = 0
             else:
                 # If the detection is outside the gating area, treat as a missing detection
                 self.__missed_detection_count += 1

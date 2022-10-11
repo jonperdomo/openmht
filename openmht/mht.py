@@ -83,46 +83,48 @@ class MHT:
             frame_index += 1
             detections = self.__detections.pop(0)
             logging.info("Frame {}: {} detections".format(frame_index, len(detections)))
-            updated_parent_nodes = []  # Contains all tree nodes created for this detection
+            # updated_parent_nodes = []  # Contains all tree nodes created for this detection
 
             # Add a dummy branch for missing detections at this frame
-            for previous_parent_node in parent_nodes:
+            dummy_branches = []
+            for parent_node in parent_nodes:
                 # Create a dummy branch
-                child_node = TrackNode(frame_index, None, parent=previous_parent_node)
-                previous_parent_node.add_child(child_node)
+                child_node = TrackNode(frame_index, None, parent=parent_node)
 
-                # Update for the next loop
-                updated_parent_nodes.append(child_node)
+                # Check that the Nmiss threshold is not exceeded
+                missed_detection_count = child_node.get_filter().get_missed_detection_count()
+                if missed_detection_count < nmiss:
+                    dummy_branch = deepcopy(parent_node)
+                    dummy_branch.add_child(child_node)
+                    dummy_branches.append(dummy_branch)
 
             # Enumerate each CSV row, where 'index' is the detection ID, and 'detection' is its U,V coordinate
+            detection_branches = []
             for index, detection in enumerate(detections):
                 # Nodes sharing this timepoint and detection are conflicting.
                 # Thus, specify a unique non-zero conflict ID that nodes generated below will share.
                 conflict_id += 1
 
                 # Add branches to all previous trees
-                for parent_node_index in range(len(parent_nodes)):
-                    # Check that the parent node's missing detections do not exceed Nmiss
-                    previous_parent_node = parent_nodes[parent_node_index]
-                    missed_detection_count = previous_parent_node.get_filter().get_missed_detection_count()
+                for parent_node in parent_nodes:
+                    # Create a node from the detection using this parent
+                    child_node = TrackNode(frame_index, detection, conflict_id=conflict_id, parent=parent_node)
+
+                    # Check that the Nmiss threshold is not exceeded
+                    missed_detection_count = child_node.get_filter().get_missed_detection_count()
                     if missed_detection_count < nmiss:
-                        # Create a node from the detection using this parent
-                        child_node = TrackNode(frame_index, detection, conflict_id=conflict_id, parent=previous_parent_node)
 
-                        # Branch from the parent node
-                        previous_parent_node.add_child(child_node)
+                        # Create a branch from this detection
+                        detection_branch = deepcopy(parent_node)
+                        detection_branch.add_child(child_node)
+                        detection_branches.append(detection_branch)
 
-                        # Update for the next loop
-                        updated_parent_nodes.append(child_node)
+                # Create a new track tree for this detection
+                detection_root_node = TrackNode(frame_index, detection, conflict_id=conflict_id, filter_params=filter_params, parent=None)
+                detection_branches.append(detection_root_node)
 
-                # Create a new tree for this detection
-                new_root_node = TrackNode(frame_index, detection, conflict_id=conflict_id, filter_params=filter_params, parent=None)
-
-                # Update for the next loop
-                updated_parent_nodes.append(new_root_node)
-
-            # Update the parent nodes
-            parent_nodes = updated_parent_nodes
+            # Concatenate all new track trees
+            parent_nodes = dummy_branches + detection_branches
 
             # Nmiss: When adding, check if None or outside gating area.
             # Return false if Nmiss is passed. Don't add node to parent as branch.
