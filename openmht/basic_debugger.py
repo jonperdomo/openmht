@@ -9,7 +9,7 @@ from openmht.mht import MHT
 import numpy as np
 
 
-def test_2d():
+def run_debugging():
     # === Set up the 2d input array ===
     # frame_count = 50
     frame_count = 10
@@ -58,6 +58,9 @@ def test_2d():
     # Run MHT
     mht = MHT(frame_data, params)
     solution_coordinates = mht.run
+
+    print("Debugger script complete.")
+
     assert True == True
     # # Set up the input detections
     # param_keys = ["b_th", "image_area", "gating_area", "k", "q", "r", "n"]
@@ -93,3 +96,6 @@ def test_2d():
     # elapsed_seconds = end - start
     # logging.info("Elapsed time (seconds): {0:.3f}".format(elapsed_seconds))
     # self.assertEqual(True, False)  # add assertion here
+
+if __name__ == '__main__':
+    run_debugging()

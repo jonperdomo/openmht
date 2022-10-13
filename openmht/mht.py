@@ -5,8 +5,8 @@ from .weighted_graph import WeightedGraph
 # from .kalman_filter import TrackFilter
 from .track_tree import TrackNode
 
-import copy
 import numpy as np
+import itertools
 
 import logging
 logging.basicConfig(level=logging.INFO,
@@ -27,28 +27,76 @@ class MHT:
         self.__detections = list(detections)
         self.__params = params
 
-    def __global_hypothesis(self, track_trees, conflict_matrix):
+    def __global_hypothesis(self, track_trees):
         """
         Generate a global hypothesis by finding the maximum weighted independent
         set of a graph with tracks as vertices, and edges between conflicting tracks.
         """
         logging.info("Calculating MWIS...")
-        gh_graph = WeightedGraph()
-        for index, kalman_filter in enumerate(track_trees):
-            gh_graph.add_weighted_vertex(str(index), kalman_filter.get_track_score())
+        track_score_graph = WeightedGraph()
+        conflict_dict = {}
+        for index, track_tree in enumerate(track_trees):
+            # Add the score to the graph
+            track_score = track_tree.get_filter().get_track_score()
+            track_score_graph.add_weighted_vertex(str(index), track_score)
 
-        gh_graph.set_adjacency_matrix(conflict_matrix)
+            # Group tracks by conflict ID
+            conflict_id = track_tree.get_conflict_id()
+            conflict_id_key = "CID_" + str(conflict_id)
+            try:
+                conflict_dict[conflict_id_key].append(index)
+            except KeyError:
+                conflict_dict[conflict_id_key] = []
+                conflict_dict[conflict_id_key].append(index)
 
-        mwis_ids = gh_graph.run()
+        # An edge is created between any non-conflicting tracks. Thus, the maximum weighted clique is the
+        # highest-scoring set of non-conflicting tracks.
+
+        # Create the NxN adjacency matrix with all ones (all connected)
+        vertex_count = len(track_trees)
+        adjacency_mat = np.ones((vertex_count, vertex_count))
+        # track_score_graph.set_adjacency_matrix(conflict_matrix)
+        # track_trees.clear()
+        for conflict_id in conflict_dict.keys():
+            # Get all track vertices with this conflict
+            conflict_vertices = conflict_dict[conflict_id]
+
+            # Get all conflict combinations
+            conflict_combos = [(a, b) for idx, a in enumerate(conflict_vertices) for b in conflict_vertices[idx + 1:]]
+
+            # Get the reversed conflict combinations
+            conflict_reversed_combos = [tuple(reversed(a)) for a in conflict_combos]
+
+            # Get the same vertex conflicts
+            edges_same_vertex = [(a, a) for a in conflict_vertices]
+
+            # Concatenate into a single list
+            all_edges = conflict_combos + conflict_reversed_combos + edges_same_vertex
+
+            # Add 0's for all conflicting tracks
+            for v1, v2 in all_edges:
+                try:
+                    adjacency_mat[v1, v2] = 0
+                except IndexError as e:
+                    print("V1=", v1)
+                    print("V2=", v2)
+                    b=1
+
+        # Solve for the maximum weighted clique
+        track_score_graph.set_adjacency_matrix(adjacency_mat)
+        mwis_ids = track_score_graph.run()
+
+        # Return the solution track tree nodes
+        solution_trees = [track_trees[i] for i in mwis_ids]
         logging.info("MWIS complete.")
 
-        return mwis_ids
+        return solution_trees
 
     @property
     def run(self):
         assert len(self.__detections)
         logging.info("Generating track trees...")
-        track_detections = []
+        track_trees = []
         track_filters = []
         frame_index = 0
         n_scan = self.__params.n  # Frame look-back for track pruning
@@ -73,14 +121,7 @@ class MHT:
         #  for the bth threshold
 
         # Generate trees and compute the solution
-        previous_track_count = 0
-        updated_track_count = 0
-        track_trees = []
-
-        # Counter for setting unique conflict IDs at child nodes
-        # Printing out unique IDs at the end enables simple conflict comparison across trees
-        track_index = 0
-        conflict_id = 0  # 0 for no conflict
+        conflict_id = 0  # Unique value for each detection conflict
         while self.__detections:
             detections = self.__detections.pop(0)
             logging.info("Frame {}: {} detections".format(frame_index, len(detections)))
@@ -146,9 +187,9 @@ class MHT:
                 top_children = [root_tracks[i] for i in top_branches_idx]
                 track_trees.extend(top_children)
 
-            # TODO: Plot results
 
             # Compute the solution
+            solution_trees = self.__global_hypothesis(track_trees)
             # if (frame_index % n_scan) == 0:
             #     solution_ids = self.__global_hypothesis(track_filters, conflict_matrix)
             #
@@ -158,7 +199,10 @@ class MHT:
             # TODO: N-pruning: Get the solution node at k-N frames, remove the other children for its parent
             # TODO: Find solution. Nodes in the solution at k-N are parents. Delete ones that don't have these parents.
 
-        logging.info("Generated {} track trees.".format(len(track_filters)))
+
+        # TODO: Plot results
+
+        logging.info("Generated {} solution track trees.".format(len(solution_trees)))
         logging.info("MHT complete.")
 
         return solution_coordinates

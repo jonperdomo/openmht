@@ -33,6 +33,9 @@ class TrackNode:
     def get_detection(self):
         return self.detection
 
+    def get_conflict_id(self):
+        return self.conflict_id
+
     def add_child(self, child_node):
         """
         Create a branch from a child node.

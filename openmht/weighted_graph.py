@@ -26,7 +26,7 @@ class WeightedGraph(Graph):
     def run(self):
         """Determine the maximum weighted clique."""
 
-        # Find all maximal cliques
+        # Find maximal cliques using the Bron-Kerbosch algorithm
         adjacency_matrix = self.__adjacency_matrix
         ind_sets = []
         self.____bron_kerbosch3(adjacency_matrix, ind_sets)
@@ -44,7 +44,9 @@ class WeightedGraph(Graph):
                 max_weight = set_weight
                 mwis = ind_set
 
-        return mwis
+        solution_set = list(mwis)
+
+        return solution_set
 
     def ____bron_kerbosch3(self, g: np.ndarray, results: list):
         """With vertex ordering."""
