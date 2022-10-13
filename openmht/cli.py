@@ -153,7 +153,7 @@ def run():
     detections = read_uv_csv(input_file)
     start = time.time()
     mht = MHT(detections, params)
-    solution_coordinates = mht.run()
+    solution_coordinates = mht.run
     write_uv_csv(output_file, solution_coordinates)
     end = time.time()
     elapsed_seconds = end - start

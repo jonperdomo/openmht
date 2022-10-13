@@ -5,7 +5,7 @@ from .weighted_graph import WeightedGraph
 # from .kalman_filter import TrackFilter
 from .track_tree import TrackNode
 
-from copy import deepcopy
+import copy
 import numpy as np
 
 import logging
@@ -44,6 +44,7 @@ class MHT:
 
         return mwis_ids
 
+    @property
     def run(self):
         assert len(self.__detections)
         logging.info("Generating track trees...")
@@ -74,65 +75,80 @@ class MHT:
         # Generate trees and compute the solution
         previous_track_count = 0
         updated_track_count = 0
-        parent_nodes = []
+        track_trees = []
 
         # Counter for setting unique conflict IDs at child nodes
         # Printing out unique IDs at the end enables simple conflict comparison across trees
+        track_index = 0
         conflict_id = 0  # 0 for no conflict
         while self.__detections:
-            frame_index += 1
             detections = self.__detections.pop(0)
             logging.info("Frame {}: {} detections".format(frame_index, len(detections)))
             # updated_parent_nodes = []  # Contains all tree nodes created for this detection
 
-            # Add a dummy branch for missing detections at this frame
-            dummy_branches = []
-            for parent_node in parent_nodes:
-                # Create a dummy branch
-                child_node = TrackNode(frame_index, None, parent=parent_node)
-
-                # Check that the Nmiss threshold is not exceeded
-                missed_detection_count = child_node.get_filter().get_missed_detection_count()
-                if missed_detection_count < nmiss:
-                    dummy_branch = deepcopy(parent_node)
-                    dummy_branch.add_child(child_node)
-                    dummy_branches.append(dummy_branch)
-
             # Enumerate each CSV row, where 'index' is the detection ID, and 'detection' is its U,V coordinate
-            detection_branches = []
+            detection_trees = []
             for index, detection in enumerate(detections):
                 # Nodes sharing this timepoint and detection are conflicting.
                 # Thus, specify a unique non-zero conflict ID that nodes generated below will share.
                 conflict_id += 1
 
                 # Add branches to all previous trees
-                for parent_node in parent_nodes:
+                for track_tree in track_trees:
+
                     # Create a node from the detection using this parent
-                    child_node = TrackNode(frame_index, detection, conflict_id=conflict_id, parent=parent_node)
+                    detection_branch =\
+                        TrackNode(frame_index, detection, conflict_id=conflict_id, parent=track_tree)
 
                     # Check that the Nmiss threshold is not exceeded
-                    missed_detection_count = child_node.get_filter().get_missed_detection_count()
+                    missed_detection_count = detection_branch.get_filter().get_missed_detection_count()
                     if missed_detection_count < nmiss:
 
                         # Create a branch from this detection
-                        detection_branch = deepcopy(parent_node)
-                        detection_branch.add_child(child_node)
-                        detection_branches.append(detection_branch)
+                        # track_tree.add_child(detection_branch)
+                        detection_trees.append(detection_branch)
+
+                        # Create a dummy branch if needed
+                        if detection_branch.get_filter().get_detection() is not None:
+                            dummy_branch = TrackNode(frame_index, None, parent=track_tree)
+                            # track_tree.add_child(dummy_branch)
+                            detection_trees.append(dummy_branch)
 
                 # Create a new track tree for this detection
-                detection_root_node = TrackNode(frame_index, detection, conflict_id=conflict_id, filter_params=filter_params, parent=None)
-                detection_branches.append(detection_root_node)
+                new_track_tree =\
+                    TrackNode(frame_index, detection, conflict_id=conflict_id, filter_params=filter_params, parent=None)
+                detection_trees.append(new_track_tree)
 
-            # Concatenate all new track trees
-            parent_nodes = dummy_branches + detection_branches
+            # Iterate the frame
+            frame_index += 1
 
-            # Nmiss: When adding, check if None or outside gating area.
-            # Return false if Nmiss is passed. Don't add node to parent as branch.
             # TODO: Bth: Sort branches by score, keep the top bth branches
+            # First, sort by root ID
+            root_dict = {}
+            while detection_trees:
+                track_tree = detection_trees.pop()
+                root_id = track_tree.get_root_id()
+                try:
+                    root_dict[root_id].append(track_tree)
+                except KeyError:
+                    root_dict[root_id] = []
+                    root_dict[root_id].append(track_tree)
+
+            # Keep only highest scoring branches for each root node
+            track_trees.clear()
+            for track_id in root_dict.keys():
+                # Get track scores from this root
+                root_tracks = root_dict[track_id]
+                track_scores = [x.get_filter().get_track_score() for x in root_tracks]
+
+                # Keep only the top scoring branches
+                top_branches_idx = np.argsort(track_scores)[-b_th:]
+                top_children = [root_tracks[i] for i in top_branches_idx]
+                track_trees.extend(top_children)
 
             # TODO: Plot results
 
-            # # Compute the solution
+            # Compute the solution
             # if (frame_index % n_scan) == 0:
             #     solution_ids = self.__global_hypothesis(track_filters, conflict_matrix)
             #
@@ -140,6 +156,7 @@ class MHT:
             #     track_filters = track_filters[solution_ids]
 
             # TODO: N-pruning: Get the solution node at k-N frames, remove the other children for its parent
+            # TODO: Find solution. Nodes in the solution at k-N are parents. Delete ones that don't have these parents.
 
         logging.info("Generated {} track trees.".format(len(track_filters)))
         logging.info("MHT complete.")

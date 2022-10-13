@@ -14,6 +14,7 @@ class TrackFilter:
     """
     def __init__(self, initial_frame, initial_observation, filter_params): #, v=307200, dth=1000, k=0, q=1e-5, r=0.01):
         # Kalman filter parameters
+        self.__detection = initial_observation
         self.__dims = len(initial_observation)
         x = np.matrix(initial_observation).reshape((self.__dims, 1))
         self.__Q = np.matrix(np.eye(self.__dims)) * filter_params['q']
@@ -37,6 +38,9 @@ class TrackFilter:
         frame_key = self.__format_frame_key(initial_frame)
         self.__frame_detection_data = {frame_key: [initial_observation]}
 
+    def get_detection(self):
+        return self.__detection
+
     def get_track_score(self):
         return self.__track_score
 
@@ -57,6 +61,7 @@ class TrackFilter:
         if z is None:
             self.__missed_detection_count += 1
             self.__track_score += self.__missed_detection_score
+            self.__detection = None
 
         else:
             # Time update
@@ -82,6 +87,7 @@ class TrackFilter:
                 # If the detection is outside the gating area, treat as a missing detection
                 self.__missed_detection_count += 1
                 self.__track_score += self.__missed_detection_score
+                self.__detection = None
 
     def __format_frame_key(self, frame_number):
         frame_key = 'F' + str(frame_number)
