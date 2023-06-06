@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="openmht",
-    version="0.1.0",
+    version="1.0.0",
     author="Jonathan Elliot Perdomo",
     author_email="jonperdomodb@gmail.com",
     description="OpenMHT",

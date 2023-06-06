@@ -81,11 +81,11 @@ class WeightedGraph(Graph):
 
     def __degeneracy_ordering(self, g):
         """Order such that each vertex has d or fewer neighbors that come later in the ordering."""
-        v_ordered = set()
+        v_ordered = []
         degrees = list(enumerate(self.vertex_degrees(g)))
         while degrees:
             min_index, min_value = min(degrees, key=operator.itemgetter(1))
-            v_ordered.add(min_index)
+            v_ordered.append(min_index)
             degrees.remove((min_index, min_value))
 
         return v_ordered
