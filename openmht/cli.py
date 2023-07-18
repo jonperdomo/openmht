@@ -2,8 +2,8 @@
 """CLI"""
 
 from .mht import MHT
+from pathlib import Path
 
-import os
 import sys
 import argparse
 import time
@@ -122,11 +122,11 @@ def read_cli_parameters():
 
     # Verify CSV file formats
     try:
-        assert os.path.isfile(input_file), "Input file does not exist: {}".format(input_file)
-        assert os.path.isfile(param_file), "Parameter file does not exist: {}".format(param_file)
-        assert os.path.splitext(input_file)[-1].lower() == '.csv', "Input file is not CSV: {}".format(input_file)
-        assert os.path.splitext(output_file)[-1].lower() == '.csv', "Output file is not CSV: {}".format(output_file)
-        assert os.path.splitext(param_file)[-1].lower() == '.txt', "Parameter file is not TXT: {}".format(param_file)
+        assert Path(input_file).is_file(), f"Input file does not exist: {input_file}"
+        assert Path(param_file).is_file(), f"Parameter file does not exist: {param_file}"
+        assert Path(input_file).suffix == '.csv', f"Input file is not CSV: {input_file}"
+        assert Path(output_file).suffix == '.csv', f"Output file is not CSV: {output_file}"
+        assert Path(param_file).suffix == '.txt', f"Parameter file is not TXT: {param_file}"
 
     except AssertionError as e:
         print(e)
@@ -153,4 +153,4 @@ def read_cli_parameters():
     write_uv_csv(output_file, solution_coordinates)
     end = time.time()
     elapsed_seconds = end - start
-    logging.info("Elapsed time (seconds): {0:.3f}".format(elapsed_seconds))
+    logging.info(f"Elapsed time (seconds): {elapsed_seconds:.3f}")
