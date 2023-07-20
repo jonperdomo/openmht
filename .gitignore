@@ -8,3 +8,6 @@
 /dist
 /openmht.egg-info
 /build/lib/openmht
+test/
+*.DS_Store
+.vscode/

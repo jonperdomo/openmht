@@ -1,4 +1,4 @@
-from .openmht import cli
+from openmht import cli
 
 
 def main():
