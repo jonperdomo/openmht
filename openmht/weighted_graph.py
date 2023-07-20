@@ -2,7 +2,7 @@
 """Weighted Graph"""
 
 import operator
-import random
+import numpy as np
 
 from .graph import Graph
 
@@ -12,9 +12,8 @@ __version__ = "0.1.0"
 
 
 class WeightedGraph(Graph):
-    """
-    A graph with weighted vertices.
-    """
+    """A graph with weighted vertices."""
+
     def __init__(self, graph_dict=None):
         Graph.__init__(self, graph_dict)
         self.__weights = {}
@@ -28,8 +27,10 @@ class WeightedGraph(Graph):
         self.____bron_kerbosch3(complement, ind_sets)
 
         # Find the maximum weighted set
-        # NOTE: The maximum total weight of any subset of nodes in this graph cannot be less than the additive
-        # inverse of the total magnitude of all node weights, subtract 1. Use this value as the initial maximum weight.
+        # NOTE: The maximum total weight of any subset of nodes in this graph
+        # cannot be less than the additive inverse of the total magnitude of all
+        # node weights, subtract 1. Use this value as the initial maximum
+        # weight.
         max_weight = -sum(map(abs, self.__weights.values()))-1
         mwis = []
         for ind_set in ind_sets:
@@ -40,7 +41,7 @@ class WeightedGraph(Graph):
 
         return mwis
 
-    def ____bron_kerbosch3(self, g, results):
+    def ____bron_kerbosch3(self, g: np.ndarray, results: list):
         """With vertex ordering."""
         P = set(range(len(self.vertices())))
         R, X = set(), set()
@@ -53,21 +54,32 @@ class WeightedGraph(Graph):
             P = P - {v}
             X = X | {v}
 
-    def ____bron_kerbosch2(self, R, P, X, g, results):
+    def ____bron_kerbosch2(self, R: set, P: set, X: set, g: np.ndarray,
+                           results: list):
         """With pivoting."""
         if not any((P, X)):
             results.append(R)
             return
 
-        u = random.choice(tuple(P | X))
-        for v in P - self.__n(u, g):
+        # Choose pivot point u that maximizes size of N(u). This is chosen to
+        # minimize the size of P - N(u), thus minimizing recursion branches.
+        u_max = -1
+        size_max = 0
+        for u in P | X:
+            size_N = len(self.__n(u, g))
+            if size_N > size_max:
+                u_max = u
+                size_max = size_N
+
+        for v in P - self.__n(u_max, g):
             N_v = self.__n(v, g)
-            self.__bron_kerbosch(R | {v}, P & N_v, X & N_v, g, results)
+            self.____bron_kerbosch2(R | {v}, P & N_v, X & N_v, g, results)
 
             P = P - {v}
             X = X | {v}
 
-    def __bron_kerbosch(self, R, P, X, g, results):
+    def __bron_kerbosch(self, R: set, P: set, X: set, g: np.ndarray,
+                        results: list):
         """Without pivoting."""
         if not any((P, X)):
             results.append(R)
@@ -79,7 +91,7 @@ class WeightedGraph(Graph):
             P = P - {v}
             X = X | {v}
 
-    def __degeneracy_ordering(self, g):
+    def __degeneracy_ordering(self, g: np.ndarray) -> list:
         """Order such that each vertex has d or fewer neighbors that come later in the ordering."""
         v_ordered = []
         degrees = list(enumerate(self.vertex_degrees(g)))
@@ -90,7 +102,7 @@ class WeightedGraph(Graph):
 
         return v_ordered
 
-    def __n(self, v, g):
+    def __n(self, v: int, g: np.ndarray) -> set:
         return set([i for i, n_v in enumerate(g[v]) if n_v])
 
     def add_weighted_vertex(self, vertex, weight):
