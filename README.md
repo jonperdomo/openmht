@@ -1,7 +1,7 @@
 # openmht
-Python module for multiple hypothesis tracking. Based on the article:
-
 [![unit tests](https://github.com/jonperdomo/openmht/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/jonperdomo/openmht/actions/workflows/unit-tests.yml)
+
+Python module for multiple hypothesis tracking. Based on the article:
 
 _C. Kim, F. Li, A. Ciptadi and J. M. Rehg, "Multiple Hypothesis Tracking Revisited," 2015 IEEE International Conference on Computer Vision (ICCV), Santiago, 2015, pp. 4696-4704.
 doi: 10.1109/ICCV.2015.533
