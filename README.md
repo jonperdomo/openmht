@@ -19,24 +19,21 @@ Format the input CSV columns with frame number and pixel positions using the exa
 The U,V values represent the 2D positions of objects/detections in that frame. A value of *None* in the output CSV indicates a missed detection. The *Track* column indicates the final track ID for a detection.
 
 ### Parameters
-Modify parameters by editing the file *params.txt*:
+Modify parameters by editing the **params.txt** input file:
 
-**image_area**: The image (frame) area in pixels (Default: 307200)
-
-**gating_area**:  Gating area for new detections (Default: 1000)
-
-**k**: Gain or blending factor (Default: 0)
-
-**q**:  Kalman filter process variance (Default: 0.00001)
-
-**r**: Estimate of measurement variance (Default: 0.01)
-
-**n**: N-scan branch pruning parameter
+| **Parameter** | **Description** |
+| --- | --- |
+| image_area | The image (frame) area in pixels (Default: 307200) |
+| gating_area | Gating area for new detections (Default: 1000) |
+| k | Gain or blending factor (Default: 0) |
+| q |  Kalman filter process variance (Default: 0.00001) |
+| r | Estimate of measurement variance (Default: 0.01) |
+| n | N-scan branch pruning parameter |
 
 ### Running:
 OpenMHT takes 3 parameters: The input CSV, output CSV, and parameter file paths.
 
-```$ python -m openmht /Path/To/InputDetections.csv /Path/To/OutputDetections.csv /Path/To/ParameterFile.txt```
+```$ python -m openmht InputDetections.csv OutputDetections.csv ParameterFile.txt```
 
 ### Example output
 <table>
