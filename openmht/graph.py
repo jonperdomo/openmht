@@ -90,7 +90,7 @@ class Graph(object):
             double, i.e. every occurence of vertex in the list
             of adjacent vertices
         """
-        degrees = adj_mat.sum(axis=1)
+        degrees = np.sum(adj_mat, axis=1)
         return degrees
 
     def __generate_edges(self):

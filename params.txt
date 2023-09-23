@@ -1,0 +1,8 @@
+v = 307200  # Image width x height in pixels
+dth = 1000  # Gating area for new detections
+k = 0  # Gain or blending factor
+q = 0.00001  # Kalman filter process variance
+r = 0.01  # Estimate of measurement variance
+n = 1  # N-scan pruning parameter
+bth = 100  # Maximum branch count
+nmiss = 3  # Maximum consecutive missed frame count
