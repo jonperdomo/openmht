@@ -119,15 +119,15 @@ def read_parameters(params_file_path):
     return params
 
 
-def run():
+def run(cli_args=None):
     """Read in the command line parameters and run MHT."""
     parser = argparse.ArgumentParser()
     parser.add_argument('ifile', help="Input CSV file path")
     parser.add_argument('ofile', help="Output CSV file path")
     parser.add_argument('pfile', help='Path to the parameter text file')
-    args = parser.parse_args()
 
     # Parse arguments
+    args = parser.parse_args(cli_args)
     input_file = args.ifile
     output_file = args.ofile
     param_file = args.pfile
