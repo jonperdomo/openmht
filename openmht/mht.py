@@ -103,11 +103,11 @@ class MHT:
             for solution_id in solution_ids:
                 detections = track_detections[solution_id]
                 track_coordinates = []
-                for i in range(len(detections)):
-                    if detections[i] == '':
+                for i, detection in enumerate(detections):
+                    if detection == '':
                         track_coordinates.append(None)
                     else:
-                        track_coordinates.append(coordinates[i][detections[i]])
+                        track_coordinates.append(coordinates[i][detection])
                 solution_coordinates.append(track_coordinates)
 
                 d_id = track_detections[solution_id][prune_index]

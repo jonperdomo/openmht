@@ -11,13 +11,12 @@ class KalmanFilter:
     """Kalman filter for 2D & 3D vectors."""
     def __init__(self, initial_observation, v=307200, dth=1000, k=0, q=1e-5, r=0.01):
         self.__dims = len(initial_observation)
-        x = np.matrix(initial_observation).reshape((self.__dims, 1))
-        self.__Q = np.matrix(np.eye(self.__dims)) * q
+        x = np.ndarray(shape=(self.__dims, 1), dtype=float, buffer=np.array(initial_observation))
+        self.__Q = np.diag(np.full(self.__dims, q))
         self.__xhat = x  # a posteri estimate of x
-        self.__P = np.matrix(np.eye(self.__dims))  # a posteri error estimate
+        self.__P = np.identity(self.__dims)
         self.__K = k  # gain or blending factor
         self.__R = r  # estimate of measurement variance, change to see effect
-
         self.__image_area = v
         self.__missed_detection_score = np.log(1. - (1. / self.__image_area))
         self.__track_score = self.__missed_detection_score
@@ -32,7 +31,7 @@ class KalmanFilter:
 
         else:
             # Time update
-            x = np.matrix(z).reshape((self.__dims, 1))
+            x = np.ndarray(shape=(self.__dims, 1), dtype=float, buffer=np.array(z))
             mu = self.__xhat
             sigma = self.__P + self.__Q
             d_squared = self.__mahalanobis_distance(x, mu, sigma)
@@ -43,9 +42,9 @@ class KalmanFilter:
 
                 # Measurement update
                 self.__K = sigma / (sigma + self.__R)
-                self.__xhat = mu + self.__K * (x - mu)
+                self.__xhat = mu + np.dot(self.__K, (x - mu))
 
-                I = np.matrix(np.eye(self.__dims))  # identity matrix
+                I = np.identity(self.__dims)
                 self.__P = (I - self.__K) * sigma
 
     def __motion_score(self, sigma, d_squared):
@@ -58,7 +57,7 @@ class KalmanFilter:
         assert mu.shape == (self.__dims, 1), "Mu shape did not match dimensions {}".format(mu.shape)
         assert sigma.shape == (self.__dims, self.__dims), "Sigma shape did not match dimensions {}".format(sigma.shape)
 
-        d_squared = (mu-x).T * np.linalg.inv(sigma) * (mu-x)
+        d_squared = np.dot(np.dot((mu-x).T, np.linalg.inv(sigma)), (mu-x))
 
         return d_squared
     
