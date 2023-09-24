@@ -3,24 +3,27 @@
 
 Python module for multiple hypothesis tracking. Based on the article:
 
-_C. Kim| F. Li| A. Ciptadi and J. M. Rehg| "Multiple Hypothesis Tracking Revisited|" 2015 IEEE International Conference on Computer Vision (ICCV)| Santiago| 2015| pp. 4696-4704.
-doi: 10.1109/ICCV.2015.533
+_C. Kim, F. Li, A. Ciptadi and J. M. Rehg, "Multiple Hypothesis Tracking Revisited," 2015 IEEE International Conference on Computer Vision (ICCV), Santiago, Chile, 2015, pp. 4696-4704, doi: 10.1109/ICCV.2015.533._
+
 URL: https://ieeexplore.ieee.org/document/7410890
 
-Note: This implementation utilizes motion scoring only (no appearance scoring)
+This implementation utilizes motion scoring only (no appearance scoring)
 
-### Dependencies
+## Installation
+
  Install the latest version of [Python 3](https://www.python.org/downloads/)
- 
-### Installation
 
 ```$ pip install openmht```
 
-### Formatting the Input CSV File
+For plotting tracks with TrackVis, also install matplotlib:
+
+```$ pip install matplotlib```
+
+## Formatting the Input CSV File
 Format the input CSV columns with frame number and pixel positions using the examples under **SampleData/** as a reference.
 The **U,V** values represent the 2D positions of objects/detections in that frame. A value of **None** in the output CSV indicates a missed detection. The **Track** column indicates the final track ID for a detection.
 
-### MHT Parameters
+## MHT Parameters
 Modify parameters by editing the **params.txt** input file. Please read the paper mentioned above to understand how these parameters can be updated to improve performance and accuracy:
 
 | Parameter | Description                                                                                                                                                     |
@@ -44,7 +47,7 @@ Track tree pruning parameters:
 | bth       | If the number of branches exceeds the number **B<sub>th</sub>**| then prune the track tree to only retain the top **B<sub>th</sub>** branches.                                                          |
 | nmiss     | A track hypothesis is deleted if it reaches **N<sub>miss</sub>** consecutive frames of missing observations| which are due to occlusion or a false negative.                                 |
 
-### Running the Program
+## Running the Program
 **OpenMHT** takes in the input CSV detections and the parameter file, and saves to the provided output CSV file:
 
 ```$ python -m openmht InputDetections.csv OutputDetections.csv ParameterFile.txt```
@@ -53,7 +56,7 @@ Track tree pruning parameters:
 
 ```$ python -m trackvis SampleOutput.csv -o OutputTracks.png```
 
-### Example Results
+## Example Results
 
 Results from running **SampleData/SampleInput.csv**:
 
