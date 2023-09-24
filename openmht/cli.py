@@ -1,22 +1,20 @@
 #!/usr/bin/env python
-"""CLI"""
-
-from .mht import MHT
-from pathlib import Path
-
 import sys
 import argparse
 import time
 import csv
-
 import logging
+
+from pathlib import Path
+
+from .mht import MHT
+
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
 
 __author__ = "Jon Perdomo"
 __license__ = "GPL-3.0"
-__version__ = "0.1.0"
 
 
 def read_uv_csv(file_path, frame_max=100):
@@ -27,7 +25,7 @@ def read_uv_csv(file_path, frame_max=100):
     """
     logging.info("Reading input CSV...")
     detections = []
-    with open(file_path) as csv_file:
+    with open(file_path, encoding='utf-8-sig') as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         line_count = 0
         current_frame = None
@@ -48,7 +46,7 @@ def read_uv_csv(file_path, frame_max=100):
                 detections[detection_index].append([u, v])
                 line_count += 1
 
-        logging.info(f'Reading inputs complete. Processed {line_count-1} detections across {len(detections)} frames.')
+        logging.info(f"Reading inputs complete. Processed {line_count} lines.")
 
     return detections
 
@@ -61,32 +59,44 @@ def write_uv_csv(file_path, solution_coordinates):
     """
     logging.info("Writing output CSV...")
     csv_rows = []
-    for i in range(len(solution_coordinates)):
-        track_coordinates = solution_coordinates[i]
-        for j in range(len(track_coordinates)):
-            coordinate = track_coordinates[j]
+    # Flatten the track trees into a list of coordinates
+    for track_index, track_coordinates in enumerate(solution_coordinates):
+        for frame_index, coordinate in enumerate(track_coordinates):
             if coordinate is None:
                 u = v = 'None'
             else:
                 u, v = [str(x) for x in coordinate]
 
-            csv_rows.append([j, i, u, v])
+            csv_rows.append([frame_index, track_index, u, v])
+
+    # for i in range(len(solution_coordinates)):
+    #     track_coordinates = solution_coordinates[i]
+    #     for j in range(len(track_coordinates)):
+    #         coordinate = track_coordinates[j]
+    #         if coordinate is None:
+    #             u = v = 'None'
+    #         else:
+    #             u, v = [str(x) for x in coordinate]
+
+    #         csv_rows.append([j, i, u, v])
 
     # Sort the results by frame number
     csv_rows.sort(key=lambda x: x[0])
-    with open(file_path, 'w') as csv_file:
+    with open(file_path, 'w', encoding='utf-8-sig') as csv_file:
         writer = csv.writer(csv_file, lineterminator='\n')
         writer.writerow(['frame', 'track', 'u', 'v'])
         writer.writerows(csv_rows)
 
-    logging.info("CSV saved to {}".format(file_path))
+    logging.info(f"CSV saved to {file_path}")
 
 
 def read_parameters(params_file_path):
     """Read in the current Kalman filter parameters."""
-    param_keys = ["image_area", "gating_area", "k", "q", "r", "n"]
+    param_keys = ["v", "dth", "k", "q", "r", "n", "bth", "nmiss"]
     params = {}
-    with open(params_file_path) as f:
+
+    # Open the parameter file and read in the parameters
+    with open(params_file_path, encoding='utf-8-sig') as f:
         for line in f:
             line_data = line.split("#")[0].split('=')
             if len(line_data) == 2:
@@ -108,14 +118,15 @@ def read_parameters(params_file_path):
     return params
 
 
-def read_cli_parameters():
+def run(cli_args=None):
+    """Read in the command line parameters and run MHT."""
     parser = argparse.ArgumentParser()
     parser.add_argument('ifile', help="Input CSV file path")
     parser.add_argument('ofile', help="Output CSV file path")
     parser.add_argument('pfile', help='Path to the parameter text file')
-    args = parser.parse_args()
 
     # Parse arguments
+    args = parser.parse_args(cli_args)
     input_file = args.ifile
     output_file = args.ofile
     param_file = args.pfile

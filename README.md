@@ -1,74 +1,128 @@
 # openmht
+[![unit tests](https://github.com/jonperdomo/openmht/actions/workflows/unit-tests.yml/badge.svg)](https://github.com/jonperdomo/openmht/actions/workflows/unit-tests.yml)
+
 Python module for multiple hypothesis tracking. Based on the article:
 
-_C. Kim, F. Li, A. Ciptadi and J. M. Rehg, "Multiple Hypothesis Tracking Revisited," 2015 IEEE International Conference on Computer Vision (ICCV), Santiago, 2015, pp. 4696-4704.
-doi: 10.1109/ICCV.2015.533
-URL: http://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7410890&isnumber=7410356_
+_C. Kim, F. Li, A. Ciptadi and J. M. Rehg, "Multiple Hypothesis Tracking Revisited," 2015 IEEE International Conference on Computer Vision (ICCV), Santiago, Chile, 2015, pp. 4696-4704, doi: 10.1109/ICCV.2015.533._
 
-Note: This implementation utilizes motion scoring only (no appearance scoring)
+URL: https://ieeexplore.ieee.org/document/7410890
 
-### Dependencies
+This implementation utilizes motion scoring only (no appearance scoring)
+
+## Installation
+
  Install the latest version of [Python 3](https://www.python.org/downloads/)
- 
-### Installation
 
 ```$ pip install openmht```
 
-### Input data
-Format the input CSV columns with frame number and pixel positions using the examples under *SampleData/* as a reference.
-The U,V values represent the 2D positions of objects/detections in that frame. A value of *None* in the output CSV indicates a missed detection. The *Track* column indicates the final track ID for a detection.
+For plotting tracks with TrackVis, also install matplotlib:
 
-### Parameters
-Modify parameters by editing the **params.txt** input file:
+```$ pip install matplotlib```
 
-| **Parameter** | **Description** |
-| --- | --- |
-| image_area | The image (frame) area in pixels (Default: 307200) |
-| gating_area | Gating area for new detections (Default: 1000) |
-| k | Gain or blending factor (Default: 0) |
-| q |  Kalman filter process variance (Default: 0.00001) |
-| r | Estimate of measurement variance (Default: 0.01) |
-| n | N-scan branch pruning parameter |
+## Formatting the Input CSV File
+Format the input CSV columns with frame number and pixel positions using the examples under **SampleData/** as a reference.
+The **U,V** values represent the 2D positions of objects/detections in that frame. A value of **None** in the output CSV indicates a missed detection. The **Track** column indicates the final track ID for a detection.
 
-### Running:
-OpenMHT takes 3 parameters: The input CSV, output CSV, and parameter file paths.
+## MHT Parameters
+Modify parameters by editing the **params.txt** input file. Please read the paper mentioned above to understand how these parameters can be updated to improve performance and accuracy:
+
+| Parameter | Description                                                                                                                                                     |
+|-----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| v         | The image (frame) area in pixels (Default: 307200). The likelihood under the null hypothesis for an observation becomes the probability of detection P<sub>D</sub>=1/**V**.  |
+| dth       | Gating area for new detections implemented as the threshold for the Mahalinobis distance d<sup>2</sup> between the observation and prediction (Default=1000).   |
+
+Kalman filter parameters:
+
+| Parameter | Description                                                                                                                            |
+|-----------|----------------------------------------------------------------------------------------------------------------------------------------|
+| k         | Gain or blending factor. Higher gain results in a greater influence of the measurement relative to the filter's prediction (Default=0) |
+| q         | Initial estimate of the process noise covariance (Default=0.00001)                                                                     |
+| r         | Initial estimate of the measurement noise covariance (Default=0.01)                                                                    |
+
+Track tree pruning parameters:
+
+| Parameter | Description                                                                                                                                                                       |
+|-----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| n         | Go back **N** frames and prune branches that diverge from the solution. Larger N yields a more accurate solution due to a larger window| but will take a longer time (Default=1). |
+| bth       | If the number of branches exceeds the number **B<sub>th</sub>**| then prune the track tree to only retain the top **B<sub>th</sub>** branches.                                                          |
+| nmiss     | A track hypothesis is deleted if it reaches **N<sub>miss</sub>** consecutive frames of missing observations| which are due to occlusion or a false negative.                                 |
+
+## Running the Program
+**OpenMHT** takes in the input CSV detections and the parameter file, and saves to the provided output CSV file:
 
 ```$ python -m openmht InputDetections.csv OutputDetections.csv ParameterFile.txt```
 
-### Example output
+**TrackVis** takes a CSV in the MHT output format and shows a figure of the resulting color-coded tracks. Optionally, it saves the figure to the provided image filepath.
+
+```$ python -m trackvis SampleOutput.csv -o OutputTracks.png```
+
+## Example Results
+
+Results from running **SampleData/SampleInput.csv**:
+
+![OutputTracks](https://github.com/jonperdomo/openmht/assets/14855676/e694aebe-dd62-4d0b-bb1f-0e0d3f5a9339)
+
 <table>
 <tr><th>Input</th><th>Output</th></tr>
 <tr><td>
 
 | Frame | U | V |
 |--|--|--|
-0|-0.0411|0.208
-0|9.97|10
-0|15.2|14.9
-1|14|13
-1|-0.0099|0.00141
-1|9.9|10.1
-1|15.1|14.9
-2|14.1|13
-2|-0.009|0.00141
-2|10|10.099
-2|15|14.89
+0|0.0703|0.3163
+1|0.1071|0.3746
+1|0.1325|0.1618
+2|0.1694|0.4534
+2|0.1809|0.1910
+2|0.4205|0.0977
+3|0.2200|0.5700
+3|0.2408|0.2755
+3|0.5081|0.1618
+4|0.2938|0.6429
+4|0.3007|0.3222
+4|0.5703|0.2201
+5|0.3445|0.7157
+5|0.3767|0.4184
+5|0.6555|0.2988
+6|0.4297|0.8149
+6|0.4459|0.4767
+6|0.7247|0.3688
+7|0.4850|0.8703
 
 </td><td>
 
 |Frame|Track|U|V| 
 |--|--|--|--|
-0|0|-0.0411|0.208
-0|1|9.97|10.0
-0|2|15.2|14.9
+0|0|0.0703|0.3163
+0|1|None|None
+0|2|None|None
 0|3|None|None
-1|0|-0.0099|0.00141
-1|1|9.9|10.1
-1|2|15.1|14.9
-1|3|14.0|13.0
-2|0|-0.009|0.00141
-2|1|10.0|10.099
-2|2|15.0|14.89
-2|3|14.1|13.0
+1|0|0.1071|0.3746
+1|1|0.1325|0.1618
+1|2|None|None
+1|3|None|None
+2|0|0.1694|0.4534
+2|1|0.1809|0.191
+2|2|0.4205|0.0977
+2|3|None|None
+3|0|0.22|0.57
+3|1|0.2408|0.2755
+3|2|0.5081|0.1618
+3|3|None|None
+4|0|0.2938|0.6429
+4|1|0.3007|0.3222
+4|2|0.5703|0.2201
+4|3|None|None
+5|0|0.3445|0.7157
+5|1|0.3767|0.4184
+5|2|0.6555|0.2988
+5|3|None|None
+6|0|None|None
+6|1|0.4459|0.4767
+6|2|0.7247|0.3688
+6|3|0.4297|0.8149
+7|0|None|None
+7|1|None|None
+7|2|None|None
+7|3|0.485|0.8703
 
 </td></tr> </table>

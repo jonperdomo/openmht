@@ -8,7 +8,6 @@ from .graph import Graph
 
 __author__ = "Jon Perdomo"
 __license__ = "GPL-3.0"
-__version__ = "0.1.0"
 
 
 class WeightedGraph(Graph):
@@ -19,7 +18,10 @@ class WeightedGraph(Graph):
         self.__weights = {}
 
     def mwis(self):
-        """Determine the maximum weighted independent set."""
+        """
+        Determine the maximum weighted independent set.
+        Returns a list of vertex IDs.
+        """
 
         # Find all maximal independent sets
         complement = self.complement()
@@ -119,3 +121,4 @@ class WeightedGraph(Graph):
             res += str(w) + " "
 
         return res
+    

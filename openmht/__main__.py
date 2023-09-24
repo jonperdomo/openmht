@@ -2,7 +2,8 @@ from openmht import cli
 
 
 def main():
-    cli.read_cli_parameters()
+    """Run the OpenMHT command line interface."""
+    cli.run()
 
 
 if __name__ == '__main__':
