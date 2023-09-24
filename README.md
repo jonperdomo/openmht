@@ -26,26 +26,28 @@ The **U,V** values represent the 2D positions of objects/detections in that fram
 ## MHT Parameters
 Modify parameters by editing the **params.txt** input file. Please read the paper mentioned above to understand how these parameters can be updated to improve performance and accuracy:
 
-| Parameter | Description                                                                                                                                                     |
-|-----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+### Motion scoring parameters
+
+| Parameter | Description |
+|---|---|
 | v         | The image (frame) area in pixels (Default: 307200). The likelihood under the null hypothesis for an observation becomes the probability of detection P<sub>D</sub>=1/**V**.  |
 | dth       | Gating area for new detections implemented as the threshold for the Mahalinobis distance d<sup>2</sup> between the observation and prediction (Default=1000).   |
 
-Kalman filter parameters:
+### Kalman filter parameters
 
-| Parameter | Description                                                                                                                            |
-|-----------|----------------------------------------------------------------------------------------------------------------------------------------|
-| k         | Gain or blending factor. Higher gain results in a greater influence of the measurement relative to the filter's prediction (Default=0) |
-| q         | Initial estimate of the process noise covariance (Default=0.00001)                                                                     |
-| r         | Initial estimate of the measurement noise covariance (Default=0.01)                                                                    |
+| Parameter | Description |
+|---|---|
+| k         | Gain or blending factor. Higher gain results in a greater influence of the measurement relative to the filter's prediction (Default=0). |
+| q         | Initial estimate of the process noise covariance (Default=0.00001). |
+| r         | Initial estimate of the measurement noise covariance (Default=0.01). |
 
-Track tree pruning parameters:
+### Track tree pruning parameters
 
 | Parameter | Description                                                                                                                                                                       |
-|-----------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| n         | Go back **N** frames and prune branches that diverge from the solution. Larger N yields a more accurate solution due to a larger window| but will take a longer time (Default=1). |
-| bth       | If the number of branches exceeds the number **B<sub>th</sub>**| then prune the track tree to only retain the top **B<sub>th</sub>** branches.                                                          |
-| nmiss     | A track hypothesis is deleted if it reaches **N<sub>miss</sub>** consecutive frames of missing observations| which are due to occlusion or a false negative.                                 |
+|---|---|
+| n         | Look back **N** frames and prune all branches that diverge from the solution. A larger **N** yields a more accurate solution due to a larger window, but will take a longer time (Default=1). |
+| bth       | If the number of branches exceeds the number **B<sub>th</sub>** then prune the track tree to only retain the top **B<sub>th</sub>** branches. |
+| nmiss     | A track hypothesis is deleted if it reaches **N<sub>miss</sub>** consecutive frames of missing observations. |
 
 ## Running the Program
 **OpenMHT** takes in the input CSV detections and the parameter file, and saves to the provided output CSV file:
@@ -59,9 +61,10 @@ For generating track plots, add the **--plot** parameter (requires **matplotlib*
 ## Example Results
 
 Results from running **SampleData/SampleInput.csv**:
-
+### Plot
 ![OutputTracks](https://github.com/jonperdomo/openmht/assets/14855676/e694aebe-dd62-4d0b-bb1f-0e0d3f5a9339)
 
+### Data
 <table>
 <tr><th>Input</th><th>Output</th></tr>
 <tr><td>
