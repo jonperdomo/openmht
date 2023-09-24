@@ -15,7 +15,6 @@ logging.basicConfig(level=logging.INFO,
 
 __author__ = "Jon Perdomo"
 __license__ = "GPL-3.0"
-__version__ = "0.1.0"
 
 
 class MHT:
@@ -64,9 +63,6 @@ class MHT:
         # nmiss = self.__params.nmiss  # Max. number of false observations in tracks
         solution_coordinates = []  # Coordinates for the solution track trees
 
-        # Create a conflict matrix for each frame. Each row is a detection, each column is a track.
-        conflict_matrix = []
-
         # Generate trees and compute the solution
         while self.__detections:
             coordinates.append({})
@@ -74,6 +70,7 @@ class MHT:
             logging.info("Frame {}: {} detections".format(frame_index, len(detections)))
             track_count = len(kalman_filters)
             for index, detection in enumerate(detections):
+                branches_added = 0  # Number of branches added to the track tree at this frame
                 detection_id = str(index)
                 coordinates[frame_index][detection_id] = detection
 
@@ -85,6 +82,9 @@ class MHT:
                     continued_branch.update(detection)
                     kalman_filters.append(continued_branch)
                     track_detections.append(track_detections[i] + [detection_id])
+                    branches_added += 1
+
+                # Create a new branch with the current detection:
 
                 # Create a new Kalman filter
                 kalman_filters.append(KalmanFilter(detection, v=v, dth=dth, k=k, q=q, r=r, nmiss=nmiss))
@@ -97,10 +97,13 @@ class MHT:
                 # Then, append the detection ID to the current frame.
                 track_detection_id = [''] * frame_index + [detection_id]
                 track_detections.append(track_detection_id)
+                branches_added += 1
 
             # Update the previous filter with a dummy detection
             prune_ids = set()
+            nmiss_prune_count = 0
             for j in range(track_count):
+
                 # Update with dummy detection coordinates
                 update_success = kalman_filters[j].update(None)
 
@@ -110,7 +113,11 @@ class MHT:
                 # If the track was pruned, add it to the prune list
                 if not update_success:
                     prune_ids.add(j)
-                    logging.info("Pruned track {} at frame {} [nmiss]".format(j, frame_index))
+                    nmiss_prune_count += 1
+            
+            # Log the N-miss pruning
+            if nmiss_prune_count > 0:
+                logging.info("Pruned %d branch(es) at frame %d [nmiss]", nmiss_prune_count, frame_index)
 
             # Prune subtrees that diverge from the solution_trees at frame k-N
             prune_index = max(0, frame_index-n_scan)
@@ -118,6 +125,7 @@ class MHT:
             solution_ids = self.__global_hypothesis(kalman_filters, conflicting_tracks)
             non_solution_ids = list(set(range(len(kalman_filters))) - set(solution_ids))
             del solution_coordinates[:]
+            n_scan_prune_count = 0
             for solution_id in solution_ids:
                 detections = track_detections[solution_id]  # Detection IDs for the solution track tree
                 track_coordinates = []
@@ -134,17 +142,42 @@ class MHT:
                     for non_solution_id in non_solution_ids:
                         if d_id == track_detections[non_solution_id][prune_index]:
                             prune_ids.add(non_solution_id)
+                            n_scan_prune_count += 1
+
+            # Log the N-scan pruning
+            if n_scan_prune_count > 0:
+                logging.info("Pruned %d branch(es) at frame N-%d [nscan]", n_scan_prune_count, n_scan)
+
+            # Prune branches that exceed the maximum number of branches and keep only the top b_th branches
+            branch_count = branches_added - len(prune_ids)
+            if branch_count > b_th:
+                
+                # Get the top b_th branches by score
+                branch_scores = []
+                for i, track_tree in enumerate(kalman_filters):
+                    if i not in prune_ids:
+                        branch_scores.append((i, track_tree.get_track_score()))
+
+                # Sort by score and keep the top b_th branches
+                branch_scores.sort(key=lambda x: x[1], reverse=True)
+                prune_ids.update([x[0] for x in branch_scores[b_th:]])
+
+                # Log the B-threshold pruning
+                b_th_prune_count = branches_added - len(prune_ids)
+                if b_th_prune_count > 0:
+                    logging.info("Pruned %d branch(es) using B-threshold [bth].", b_th_prune_count)
 
             # Prune tracks identified by n-scan, n-miss, and b-threshold
             for k in sorted(prune_ids, reverse=True):
                 del track_detections[k]
                 del kalman_filters[k]
 
-            logging.info("Pruned {} branch(es) at frame N-{} [n-scan]".format(len(prune_ids), n_scan))
+            # Log the total pruning for this frame
+            logging.info("Pruned %d total branch(es) at frame %d", len(prune_ids), frame_index)
 
             frame_index += 1
 
-        logging.info("Generated {} track trees.".format(len(kalman_filters)))
+        logging.info("Generated %d track trees", len(solution_coordinates))
 
         return solution_coordinates
 
@@ -162,22 +195,12 @@ class MHT:
 
                     if conflicting:
                         conflicting_tracks.append((track_detections.index(detections_a), track_detections.index(detections_b)))
-        # for i, detections in enumerate(track_detections):
-        #     for j in range(i + 1, len(track_detections)):
-        #         conflicting = False
-        #         for k, detection in enumerate(detections):
-        #             if detection != '' and detection == track_detections[j][k]:
-        #                 conflicting = True
-        #                 break
-
-        #         if conflicting:
-        #             conflicting_tracks.append((i, j))
 
         return conflicting_tracks
 
     def run(self):
         """Run the MHT algorithm."""
-        assert len(self.__detections)
+        assert len(self.__detections) > 0, "No detections provided."
         solution_coordinates = self.__generate_track_trees()
         logging.info("MHT complete.")
 

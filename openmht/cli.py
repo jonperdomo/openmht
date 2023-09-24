@@ -15,7 +15,6 @@ logging.basicConfig(level=logging.INFO,
 
 __author__ = "Jon Perdomo"
 __license__ = "GPL-3.0"
-__version__ = "0.1.0"
 
 
 def read_uv_csv(file_path, frame_max=100):

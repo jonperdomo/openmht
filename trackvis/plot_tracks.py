@@ -66,5 +66,7 @@ def plot_2d_tracks(input_csv, output_png):
     ax.set_xlabel('X')
     ax.set_ylabel('Y')
     ax.set_title(plot_title)
-    plt.savefig(output_png)
+    if output_png is not None:
+        plt.savefig(output_png)
+        
     plt.show()

@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="openmht",
-    version="1.0.1",
+    version="2.0.0",
     author="Jonathan Elliot Perdomo",
     author_email="jonperdomodb@gmail.com",
     description="OpenMHT",
@@ -21,7 +21,8 @@ setuptools.setup(
     python_requires='>=3.6',
     entry_points={
         'console_scripts': [
-            'openmht = openmht.__main__:main'
+            'openmht = openmht.__main__:main',
+            'trackvis = trackvis.__main__:main'
         ]
     },
 )
