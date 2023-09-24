@@ -1,8 +1,4 @@
-/.idea/misc.xml
-/.idea/modules.xml
-/.idea/openmht.iml
-/.idea/vcs.xml
-/.idea/workspace.xml
+/.idea
 /__pycache__/*.pyc
 *.pyc
 /dist
@@ -11,3 +7,4 @@
 test/
 *.DS_Store
 .vscode/
+output

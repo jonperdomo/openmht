@@ -86,24 +86,40 @@ class MHT:
                     kalman_filters.append(continued_branch)
                     track_detections.append(track_detections[i] + [detection_id])
 
-                # Create new branch from the detection
+                # Create a new Kalman filter
                 kalman_filters.append(KalmanFilter(detection, v=v, dth=dth, k=k, q=q, r=r, nmiss=nmiss))
-                track_detections.append([''] * frame_index + [detection_id])
+
+                # Create a new track detection list (list of detection IDs for each frame)
+                # Each track detection list is a branch of the track tree, and is used to
+                # quickly determine conflicting tracks and to query the Kalman filter list for
+                # the global hypothesis.
+                # First, create a list of empty strings for each frame prior to the current frame.
+                # Then, append the detection ID to the current frame.
+                track_detection_id = [''] * frame_index + [detection_id]
+                track_detections.append(track_detection_id)
 
             # Update the previous filter with a dummy detection
+            prune_ids = set()
             for j in range(track_count):
-                kalman_filters[j].update(None)  # Dummy detection coordinates
-                track_detections[j].append('')  # Dummy detection ID
+                # Update with dummy detection coordinates
+                update_success = kalman_filters[j].update(None)
+
+                # Append a dummy detection ID to the track detection list
+                track_detections[j].append('')
+
+                # If the track was pruned, add it to the prune list
+                if not update_success:
+                    prune_ids.add(j)
+                    logging.info("Pruned track {} at frame {} [nmiss]".format(j, frame_index))
 
             # Prune subtrees that diverge from the solution_trees at frame k-N
             prune_index = max(0, frame_index-n_scan)
             conflicting_tracks = self.__get_conflicting_tracks(track_detections)
             solution_ids = self.__global_hypothesis(kalman_filters, conflicting_tracks)
             non_solution_ids = list(set(range(len(kalman_filters))) - set(solution_ids))
-            prune_ids = set()
             del solution_coordinates[:]
             for solution_id in solution_ids:
-                detections = track_detections[solution_id]
+                detections = track_detections[solution_id]  # Detection IDs for the solution track tree
                 track_coordinates = []
                 for i, detection in enumerate(detections):
                     if detection == '':
@@ -112,17 +128,19 @@ class MHT:
                         track_coordinates.append(coordinates[i][detection])
                 solution_coordinates.append(track_coordinates)
 
+                # Prune branches that diverge from the solution track tree at frame k-N
                 d_id = track_detections[solution_id][prune_index]
                 if d_id != '':
                     for non_solution_id in non_solution_ids:
                         if d_id == track_detections[non_solution_id][prune_index]:
                             prune_ids.add(non_solution_id)
 
+            # Prune tracks identified by n-scan, n-miss, and b-threshold
             for k in sorted(prune_ids, reverse=True):
                 del track_detections[k]
                 del kalman_filters[k]
 
-            logging.info("Pruned {} branch(es) at frame N-{}".format(len(prune_ids), n_scan))
+            logging.info("Pruned {} branch(es) at frame N-{} [n-scan]".format(len(prune_ids), n_scan))
 
             frame_index += 1
 
@@ -133,20 +151,32 @@ class MHT:
     def __get_conflicting_tracks(self, track_detections):
         # Create a conflict matrix for each frame. Each row is a pair of conflicting tracks by index.
         conflicting_tracks = []
-        for i, detections in enumerate(track_detections):
-            for j in range(i + 1, len(track_detections)):
-                conflicting = False
-                for k, detection in enumerate(detections):
-                    if detection != '' and detection == track_detections[j][k]:
-                        conflicting = True
-                        break
+        for detections_a in track_detections:
+            for detections_b in track_detections:
+                if detections_a != detections_b:
+                    conflicting = False
+                    for frame_index, detection in enumerate(detections_a):
+                        if detection != '' and detection == detections_b[frame_index]:
+                            conflicting = True
+                            break
 
-                if conflicting:
-                    conflicting_tracks.append((i, j))
+                    if conflicting:
+                        conflicting_tracks.append((track_detections.index(detections_a), track_detections.index(detections_b)))
+        # for i, detections in enumerate(track_detections):
+        #     for j in range(i + 1, len(track_detections)):
+        #         conflicting = False
+        #         for k, detection in enumerate(detections):
+        #             if detection != '' and detection == track_detections[j][k]:
+        #                 conflicting = True
+        #                 break
+
+        #         if conflicting:
+        #             conflicting_tracks.append((i, j))
 
         return conflicting_tracks
 
     def run(self):
+        """Run the MHT algorithm."""
         assert len(self.__detections)
         solution_coordinates = self.__generate_track_trees()
         logging.info("MHT complete.")

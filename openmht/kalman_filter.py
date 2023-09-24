@@ -24,9 +24,11 @@ class KalmanFilter:
         self.__nmiss = nmiss  # Number of missed detections
 
     def get_track_score(self):
+        """Return the track score."""
         return self.__track_score
 
     def update(self, z):
+        """Update the Kalman filter with a new observation."""
         if z is None:
             self.__track_score += self.__missed_detection_score
             

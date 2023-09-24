@@ -19,7 +19,10 @@ class WeightedGraph(Graph):
         self.__weights = {}
 
     def mwis(self):
-        """Determine the maximum weighted independent set."""
+        """
+        Determine the maximum weighted independent set.
+        Returns a list of vertex IDs.
+        """
 
         # Find all maximal independent sets
         complement = self.complement()
