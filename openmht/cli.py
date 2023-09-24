@@ -4,6 +4,7 @@ import argparse
 import time
 import csv
 import logging
+import pkg_resources
 
 from pathlib import Path
 
@@ -110,10 +111,12 @@ def read_parameters(params_file_path):
 def run(cli_args=None):
     """Read in the command line parameters and run MHT."""
 
-    # Get the version from the package
-    import pkg_resources
-    __version__ = pkg_resources.require("openmht")[0].version
-    logging.info("OpenMHT version %s", __version__)
+    # Get the version from the package if possible
+    try:
+        __version__ = pkg_resources.require("openmht")[0].version
+        logging.info("OpenMHT version %s", __version__)
+    except pkg_resources.DistributionNotFound:
+        __version__ = "unknown"  # Occurs when running from source
 
     # MHT parameters
     parser = argparse.ArgumentParser()
