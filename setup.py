@@ -1,11 +1,12 @@
+"""Setup script for OpenMHT."""
 import setuptools
 
-with open("README.md", "r") as fh:
+with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
     name="openmht",
-    version="2.0.0",
+    version="2.0.1",
     author="Jonathan Elliot Perdomo",
     author_email="jonperdomodb@gmail.com",
     description="OpenMHT",
@@ -22,7 +23,6 @@ setuptools.setup(
     entry_points={
         'console_scripts': [
             'openmht = openmht.__main__:main',
-            'trackvis = trackvis.__main__:main'
         ]
     },
 )

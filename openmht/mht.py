@@ -117,7 +117,7 @@ class MHT:
             
             # Log the N-miss pruning
             if nmiss_prune_count > 0:
-                logging.info("Pruned %d branch(es) at frame %d [nmiss]", nmiss_prune_count, frame_index)
+                logging.info("[nmiss] Pruned %d branch(es) at frame %d", nmiss_prune_count, frame_index)
 
             # Prune subtrees that diverge from the solution_trees at frame k-N
             prune_index = max(0, frame_index-n_scan)
@@ -146,7 +146,7 @@ class MHT:
 
             # Log the N-scan pruning
             if n_scan_prune_count > 0:
-                logging.info("Pruned %d branch(es) at frame N-%d [nscan]", n_scan_prune_count, n_scan)
+                logging.info("[nscan] Pruned %d branch(es) at frame N-%d", n_scan_prune_count, n_scan)
 
             # Prune branches that exceed the maximum number of branches and keep only the top b_th branches
             branch_count = branches_added - len(prune_ids)
@@ -165,16 +165,13 @@ class MHT:
                 # Log the B-threshold pruning
                 b_th_prune_count = branches_added - len(prune_ids)
                 if b_th_prune_count > 0:
-                    logging.info("Pruned %d branch(es) using B-threshold [bth].", b_th_prune_count)
+                    logging.info("[bth] Pruned %d branch(es) using B-threshold.", b_th_prune_count)
 
             # Prune tracks identified by n-scan, n-miss, and b-threshold
             for k in sorted(prune_ids, reverse=True):
                 del track_detections[k]
                 del kalman_filters[k]
-
-            # Log the total pruning for this frame
-            logging.info("Pruned %d total branch(es) at frame %d", len(prune_ids), frame_index)
-
+            
             frame_index += 1
 
         logging.info("Generated %d track trees", len(solution_coordinates))

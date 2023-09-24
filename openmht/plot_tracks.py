@@ -3,14 +3,14 @@
 import os
 import matplotlib.pyplot as plt
 
-def plot_2d_tracks(input_csv, output_png):
+def plot_2d_tracks(input_csv):
     """Plot tracks from a file in CSV format."""
     # Get the filename for the plot title
     filename = os.path.basename(input_csv)
-    plot_title = "Tracks from {}".format(filename)
+    plot_title = f"Tracks from {filename}"
 
     # Read the CSV file
-    with open(input_csv, 'r') as f:
+    with open(input_csv, 'r', encoding='utf-8-sig') as f:
         lines = f.readlines()
 
     # Remove the header
@@ -48,25 +48,22 @@ def plot_2d_tracks(input_csv, output_png):
         track.append((float(x.strip()), float(y.strip())))
     # Plot the tracks
     fig = plt.figure()
-    ax = fig.add_subplot(111)
+    plot_axis = fig.add_subplot(111)
     for track in tracks:
         # Set a unique color for each track
-        color = next(ax._get_lines.prop_cycler)['color']
+        color = next(plot_axis._get_lines.prop_cycler)['color']
 
         # Convert the track to a list of X and Y coordinates
         x, y = zip(*track)
 
         # Plot the track as a line
-        ax.plot(x, y, color=color)
+        plot_axis.plot(x, y, color=color)
 
         # Plot each point in the track as a black dot
-        ax.scatter(x, y, color='black')
+        plot_axis.scatter(x, y, color='black')
 
     # Set the axis labels and title
-    ax.set_xlabel('X')
-    ax.set_ylabel('Y')
-    ax.set_title(plot_title)
-    if output_png is not None:
-        plt.savefig(output_png)
-        
+    plot_axis.set_xlabel('X')
+    plot_axis.set_ylabel('Y')
+    plot_axis.set_title(plot_title)
     plt.show()

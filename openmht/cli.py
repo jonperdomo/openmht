@@ -46,7 +46,7 @@ def read_uv_csv(file_path, frame_max=100):
                 detections[detection_index].append([u, v])
                 line_count += 1
 
-        logging.info(f"Reading inputs complete. Processed {line_count} lines.")
+        logging.info("Reading inputs complete. Processed %d lines.", line_count)
 
     return detections
 
@@ -69,17 +69,6 @@ def write_uv_csv(file_path, solution_coordinates):
 
             csv_rows.append([frame_index, track_index, u, v])
 
-    # for i in range(len(solution_coordinates)):
-    #     track_coordinates = solution_coordinates[i]
-    #     for j in range(len(track_coordinates)):
-    #         coordinate = track_coordinates[j]
-    #         if coordinate is None:
-    #             u = v = 'None'
-    #         else:
-    #             u, v = [str(x) for x in coordinate]
-
-    #         csv_rows.append([j, i, u, v])
-
     # Sort the results by frame number
     csv_rows.sort(key=lambda x: x[0])
     with open(file_path, 'w', encoding='utf-8-sig') as csv_file:
@@ -87,7 +76,7 @@ def write_uv_csv(file_path, solution_coordinates):
         writer.writerow(['frame', 'track', 'u', 'v'])
         writer.writerows(csv_rows)
 
-    logging.info(f"CSV saved to {file_path}")
+    logging.info("CSV saved to %s", file_path)
 
 
 def read_parameters(params_file_path):
@@ -96,16 +85,16 @@ def read_parameters(params_file_path):
     params = {}
 
     # Open the parameter file and read in the parameters
-    with open(params_file_path, encoding='utf-8-sig') as f:
-        for line in f:
+    with open(params_file_path, encoding='utf-8-sig') as file:
+        for line in file:
             line_data = line.split("#")[0].split('=')
             if len(line_data) == 2:
                 key, val = [s.strip() for s in line_data]
                 if key in param_keys:
                     try:
                         val = float(val)
-                    except ValueError:
-                        raise AssertionError(f"Incorrect value type in params.txt: {line}")
+                    except ValueError as exc:
+                        raise AssertionError(f"Incorrect value type in params.txt: {line}") from exc
 
                     param_keys.remove(key)
                     params[key] = val
@@ -120,10 +109,23 @@ def read_parameters(params_file_path):
 
 def run(cli_args=None):
     """Read in the command line parameters and run MHT."""
+
+    # Get the version from the package
+    import pkg_resources
+    __version__ = pkg_resources.require("openmht")[0].version
+    logging.info("OpenMHT version %s", __version__)
+
+    # MHT parameters
     parser = argparse.ArgumentParser()
     parser.add_argument('ifile', help="Input CSV file path")
     parser.add_argument('ofile', help="Output CSV file path")
     parser.add_argument('pfile', help='Path to the parameter text file')
+
+    # Version parameter
+    parser.add_argument('-V', '--version', action='version', version=f"OpenMHT version {__version__}")
+
+    # Track visualization parameters
+    parser.add_argument('-p', '--plot', action='store_true', help="Plot the tracks")
 
     # Parse arguments
     args = parser.parse_args(cli_args)
@@ -139,24 +141,24 @@ def run(cli_args=None):
         assert Path(output_file).suffix == '.csv', f"Output file is not CSV: {output_file}"
         assert Path(param_file).suffix == '.txt', f"Parameter file is not TXT: {param_file}"
 
-    except AssertionError as e:
-        print(e)
+    except AssertionError as param_error:
+        print(param_error)
         sys.exit(2)
 
-    logging.info(f"Input file is: {input_file}")
-    logging.info(f"Output file is: {output_file}")
-    logging.info(f"Parameter file is: {param_file}")
+    logging.info("Input file is: %s", input_file)
+    logging.info("Output file is: %s", output_file)
+    logging.info("Parameter file is: %s", param_file)
 
     # Read MHT parameters
     try:
         params = read_parameters(param_file)
-        logging.info(f"MHT parameters: {params}")
+        logging.info("MHT parameters: %s", params)
 
-    except AssertionError as e:
-        print(e)
+    except AssertionError as param_error:
+        print(param_error)
         sys.exit(2)
 
-    # run MHT on detections
+    # Run MHT on detections
     detections = read_uv_csv(input_file)
     start = time.time()
     mht = MHT(detections, params)
@@ -164,4 +166,14 @@ def run(cli_args=None):
     write_uv_csv(output_file, solution_coordinates)
     end = time.time()
     elapsed_seconds = end - start
-    logging.info(f"Elapsed time (seconds): {elapsed_seconds:.3f}")
+    logging.info("Elapsed time (seconds): %.3f", elapsed_seconds)
+
+    # Plot the tracks
+    if args.plot:
+
+        # Import here to allow running without matplotlib
+        from .plot_tracks import plot_2d_tracks
+
+        logging.info("Plotting tracks...")
+        plot_2d_tracks(output_file)
+        logging.info("Done.")

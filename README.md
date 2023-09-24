@@ -15,7 +15,7 @@ This implementation utilizes motion scoring only (no appearance scoring)
 
 ```$ pip install openmht```
 
-For plotting tracks with TrackVis, also install matplotlib:
+To also plot tracks after completion, install matplotlib:
 
 ```$ pip install matplotlib```
 
@@ -52,9 +52,9 @@ Track tree pruning parameters:
 
 ```$ python -m openmht InputDetections.csv OutputDetections.csv ParameterFile.txt```
 
-**TrackVis** takes a CSV in the MHT output format and shows a figure of the resulting color-coded tracks. Optionally, it saves the figure to the provided image filepath.
+For generating track plots, add the **--plot** parameter (requires **matplotlib**):
 
-```$ python -m trackvis SampleOutput.csv -o OutputTracks.png```
+```$ python -m openmht ... --plot```
 
 ## Example Results
 
