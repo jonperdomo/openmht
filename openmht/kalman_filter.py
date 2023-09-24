@@ -9,7 +9,7 @@ __version__ = "0.1.0"
 
 class KalmanFilter:
     """Kalman filter for 2D & 3D vectors."""
-    def __init__(self, initial_observation, v=307200, dth=1000, k=0, q=1e-5, r=0.01):
+    def __init__(self, initial_observation, v=307200, dth=1000, k=0, q=1e-5, r=0.01, nmiss=3):
         self.__dims = len(initial_observation)
         x = np.ndarray(shape=(self.__dims, 1), dtype=float, buffer=np.array(initial_observation))
         self.__Q = np.diag(np.full(self.__dims, q))
@@ -21,15 +21,26 @@ class KalmanFilter:
         self.__missed_detection_score = np.log(1. - (1. / self.__image_area))
         self.__track_score = self.__missed_detection_score
         self.__d_th = dth
+        self.__nmiss = nmiss  # Number of missed detections
 
     def get_track_score(self):
         return self.__track_score
 
-    def _update(self, z):
+    def update(self, z):
         if z is None:
             self.__track_score += self.__missed_detection_score
+            
+            # Increment missed detection counter
+            self.__nmiss += 1
+
+            # Prune track if missed detection counter exceeds threshold
+            if self.__nmiss > 3:
+                return False
 
         else:
+            # Reset missed detection counter
+            self.__nmiss = 0
+
             # Time update
             x = np.ndarray(shape=(self.__dims, 1), dtype=float, buffer=np.array(z))
             mu = self.__xhat
@@ -46,6 +57,8 @@ class KalmanFilter:
 
                 I = np.identity(self.__dims)
                 self.__P = (I - self.__K) * sigma
+
+        return True
 
     def __motion_score(self, sigma, d_squared):
         mot = (np.log(self.__image_area/2.*np.pi) - .5 * np.log(np.linalg.det(sigma)) - d_squared / 2.).item()

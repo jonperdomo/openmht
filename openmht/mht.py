@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+"""Multiple Hypothesis Tracking module."""
+
 from .weighted_graph import WeightedGraph
 from .kalman_filter import KalmanFilter
 
@@ -17,7 +19,7 @@ __version__ = "0.1.0"
 
 
 class MHT:
-    """Multiple Hypothesis Tracking."""
+    """Main class for the MHT algorithm."""
     def __init__(self, detections, params):
         self.__detections = list(detections)
         self.__params = params
@@ -43,7 +45,7 @@ class MHT:
         """ Run the MHT algorithm. """
 
         logging.info("Generating track trees...")
-        track_detections = []
+        track_detections = []  # Detections for all frame tracks
         kalman_filters = []
         coordinates = []  # Coordinates for all frame detections
         frame_index = 0
@@ -80,18 +82,18 @@ class MHT:
                     # Copy and update the Kalman filter
                     track_tree = kalman_filters[i]
                     continued_branch = deepcopy(track_tree)
-                    continued_branch._update(detection)
+                    continued_branch.update(detection)
                     kalman_filters.append(continued_branch)
                     track_detections.append(track_detections[i] + [detection_id])
 
                 # Create new branch from the detection
-                kalman_filters.append(KalmanFilter(detection, v=v, dth=dth, k=k, q=q, r=r))
+                kalman_filters.append(KalmanFilter(detection, v=v, dth=dth, k=k, q=q, r=r, nmiss=nmiss))
                 track_detections.append([''] * frame_index + [detection_id])
 
             # Update the previous filter with a dummy detection
             for j in range(track_count):
-                kalman_filters[j]._update(None)
-                track_detections[j].append('')
+                kalman_filters[j].update(None)  # Dummy detection coordinates
+                track_detections[j].append('')  # Dummy detection ID
 
             # Prune subtrees that diverge from the solution_trees at frame k-N
             prune_index = max(0, frame_index-n_scan)
@@ -129,14 +131,18 @@ class MHT:
         return solution_coordinates
 
     def __get_conflicting_tracks(self, track_detections):
+        # Create a conflict matrix for each frame. Each row is a pair of conflicting tracks by index.
         conflicting_tracks = []
-        for i in range(len(track_detections)):
+        for i, detections in enumerate(track_detections):
             for j in range(i + 1, len(track_detections)):
-                left_ids = track_detections[i]
-                right_ids = track_detections[j]
-                for k in range(len(left_ids)):
-                    if left_ids[k] != '' and right_ids[k] != '' and left_ids[k] == right_ids[k]:
-                        conflicting_tracks.append((i, j))
+                conflicting = False
+                for k, detection in enumerate(detections):
+                    if detection != '' and detection == track_detections[j][k]:
+                        conflicting = True
+                        break
+
+                if conflicting:
+                    conflicting_tracks.append((i, j))
 
         return conflicting_tracks
 

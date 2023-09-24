@@ -9,11 +9,11 @@ ROOT_DIR = str(Path(__file__).parent.parent)
 
 # Get the path to the test data
 TEST_DATA_PATH = os.path.join(ROOT_DIR, "SampleData")
-TEST_FILE_PATH = os.path.join(TEST_DATA_PATH, "TestInput_03.csv")
+TEST_FILE_PATH = os.path.join(TEST_DATA_PATH, "SampleInput.csv")
 PARAM_FILE_PATH = os.path.join(ROOT_DIR, "params.txt")
 OUTDIR = os.path.join(ROOT_DIR, "tests", "output")
 OUT_FILE_PATH = os.path.join(OUTDIR, "output.csv")
-TRUTH_FILE_PATH = os.path.join(TEST_DATA_PATH, "Output_03.csv")
+TRUTH_FILE_PATH = os.path.join(TEST_DATA_PATH, "SampleOutput.csv")
 
 # Make the output directory if it doesn't exist
 if not os.path.exists(OUTDIR):
