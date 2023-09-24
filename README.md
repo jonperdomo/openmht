@@ -60,6 +60,8 @@ Track tree pruning parameters:
 
 Results from running **SampleData/SampleInput.csv**:
 
+![OutputTracks](https://github.com/jonperdomo/openmht/assets/14855676/e694aebe-dd62-4d0b-bb1f-0e0d3f5a9339)
+
 <table>
 <tr><th>Input</th><th>Output</th></tr>
 <tr><td>
