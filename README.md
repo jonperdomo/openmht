@@ -54,6 +54,8 @@ Modify parameters by editing the **params.txt** input file. Please read the pape
 
 ```$ python -m openmht InputDetections.csv OutputDetections.csv ParameterFile.txt```
 
+A default parameter file is provided in this repository: [params.txt](https://github.com/jonperdomo/openmht/blob/main/params.txt)
+
 For generating track plots, add the **--plot** parameter (requires **matplotlib**):
 
 ```$ python -m openmht ... --plot```
