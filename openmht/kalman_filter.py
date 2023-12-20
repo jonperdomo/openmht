@@ -20,7 +20,8 @@ class KalmanFilter:
         self.__missed_detection_score = np.log(1. - (1. / self.__image_area))
         self.__track_score = self.__missed_detection_score
         self.__d_th = dth
-        self.__nmiss = nmiss  # Number of missed detections
+        self.__nmiss = 0  # Number of missed detections
+        self.__nmiss_max = nmiss  # Maximum number of missed detections
 
     def get_track_score(self):
         """Return the track score."""
@@ -35,7 +36,7 @@ class KalmanFilter:
             self.__nmiss += 1
 
             # Prune track if missed detection counter exceeds threshold
-            if self.__nmiss > 3:
+            if self.__nmiss > self.__nmiss_max:
                 return False
 
         else:
