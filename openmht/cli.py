@@ -82,7 +82,7 @@ def write_uv_csv(file_path, solution_coordinates):
 
 def read_parameters(params_file_path):
     """Read in the current Kalman filter parameters."""
-    param_keys = ["v", "dth", "k", "q", "r", "n", "bth", "nmiss"]
+    param_keys = ["v", "dth", "k", "q", "r", "n", "bth", "nmiss", "pd"]
     params = {}
 
     # Open the parameter file and read in the parameters

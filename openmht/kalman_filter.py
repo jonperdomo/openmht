@@ -8,7 +8,7 @@ __license__ = "GPL-3.0"
 
 class KalmanFilter:
     """Kalman filter for 2D & 3D vectors."""
-    def __init__(self, initial_observation, v=307200, dth=1000, k=0, q=1e-5, r=0.01, nmiss=3):
+    def __init__(self, initial_observation, v=307200, dth=1000, k=0, q=1e-5, r=0.01, nmiss=3, pd=0.9):
         self.__dims = len(initial_observation)
         x = np.ndarray(shape=(self.__dims, 1), dtype=float, buffer=np.array(initial_observation))
         self.__Q = np.diag(np.full(self.__dims, q))
@@ -17,7 +17,7 @@ class KalmanFilter:
         self.__K = k  # gain or blending factor
         self.__R = r  # estimate of measurement variance, change to see effect
         self.__image_area = v
-        self.__missed_detection_score = np.log(1. - (1. / self.__image_area))
+        self.__missed_detection_score = np.log(1. - pd)
         self.__track_score = self.__missed_detection_score
         self.__d_th = dth
         self.__nmiss = 0  # Number of missed detections

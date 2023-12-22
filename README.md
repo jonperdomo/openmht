@@ -30,7 +30,7 @@ Modify parameters by editing the **params.txt** input file. Please read the pape
 
 | Parameter | Description |
 |---|---|
-| v         | The image (frame) area in pixels (Default: 307200). The likelihood under the null hypothesis for an observation becomes the probability of detection P<sub>D</sub>=1/**V**.  |
+| v         | The image (frame) area in pixels (Default: 307200).  |
 | dth       | Gating area for new detections implemented as the threshold for the Mahalinobis distance d<sup>2</sup> between the observation and prediction (Default=1000).   |
 
 ### Kalman filter parameters
@@ -40,6 +40,7 @@ Modify parameters by editing the **params.txt** input file. Please read the pape
 | k         | Gain or blending factor. Higher gain results in a greater influence of the measurement relative to the filter's prediction (Default=0). |
 | q         | Initial estimate of the process noise covariance (Default=0.00001). |
 | r         | Initial estimate of the measurement noise covariance (Default=0.01). |
+| pd        | Probability of detection P<sub>D</sub> (Default=0.9). |
 
 ### Track tree pruning parameters
 

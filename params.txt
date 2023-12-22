@@ -6,3 +6,4 @@ r = 0.01  # Estimate of measurement variance
 n = 1  # N-scan pruning parameter
 bth = 100  # Maximum branch count
 nmiss = 3  # Maximum consecutive missed frame count
+pd = 0.9  # Probability of detection
