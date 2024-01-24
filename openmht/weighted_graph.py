@@ -4,7 +4,8 @@
 import operator
 import numpy as np
 
-from .graph import Graph
+# from .graph import Graph
+from graph import Graph
 
 __author__ = "Jon Perdomo"
 __license__ = "GPL-3.0"

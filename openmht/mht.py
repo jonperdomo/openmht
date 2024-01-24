@@ -2,8 +2,10 @@
 
 """Multiple Hypothesis Tracking module."""
 
-from .weighted_graph import WeightedGraph
-from .kalman_filter import KalmanFilter
+# from .weighted_graph import WeightedGraph
+# from .kalman_filter import KalmanFilter
+from weighted_graph import WeightedGraph
+from kalman_filter import KalmanFilter
 
 from copy import deepcopy
 
