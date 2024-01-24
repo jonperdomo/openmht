@@ -8,7 +8,8 @@ import pkg_resources
 
 from pathlib import Path
 
-from .mht import MHT
+# from .mht import MHT
+from mht import MHT
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s %(message)s',
@@ -175,8 +176,12 @@ def run(cli_args=None):
     if args.plot:
 
         # Import here to allow running without matplotlib
-        from .plot_tracks import plot_2d_tracks
+        # from .plot_tracks import plot_2d_tracks
+        from plot_tracks import plot_2d_tracks
 
         logging.info("Plotting tracks...")
         plot_2d_tracks(output_file)
         logging.info("Done.")
+
+if __name__ == "__main__":
+    run()

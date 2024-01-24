@@ -2,8 +2,10 @@
 
 """Multiple Hypothesis Tracking module."""
 
-from .weighted_graph import WeightedGraph
-from .kalman_filter import KalmanFilter
+# from .weighted_graph import WeightedGraph
+# from .kalman_filter import KalmanFilter
+from weighted_graph import WeightedGraph
+from kalman_filter import KalmanFilter
 
 from copy import deepcopy
 
@@ -70,8 +72,8 @@ class MHT:
             detections = self.__detections.pop(0)
             logging.info("Frame {}: {} detections".format(frame_index, len(detections)))
             track_count = len(kalman_filters)
+            branches_added = 0  # Total number of branches added to all the track tree at this frame
             for index, detection in enumerate(detections):
-                branches_added = 0  # Number of branches added to the track tree at this frame
                 detection_id = str(index)
                 coordinates[frame_index][detection_id] = detection
 
